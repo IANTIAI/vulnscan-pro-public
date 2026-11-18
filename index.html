@@ -1,0 +1,2923 @@
+<!DOC
+      TYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VulnScan Pro 1.0.0</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;600;700&family=Syne:wght@400;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<style>
+:root {
+  --bg:#080c10; --surface:#0d1520; --card:#111d2e; --border:#1a2d44;
+  --accent:#00e5ff; --accent2:#39ff14; --warn:#ff9500; --danger:#ff3b3b;
+  --text:#d0e4f0; --muted:#5a7a96;
+  --mono:Arial,Helvetica,sans-serif; --disp:Arial,Helvetica,sans-serif; --sans:Arial,Helvetica,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;font-size:13px;line-height:1.5;}
+body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,229,255,.012) 2px,rgba(0,229,255,.012) 4px);
+  pointer-events:none;z-index:999;}
+body::after{content:'';position:fixed;top:0;left:0;right:0;bottom:0;
+  background-image:linear-gradient(rgba(0,229,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.025) 1px,transparent 1px);
+  background-size:40px 40px;pointer-events:none;z-index:0;}
+.w{max-width:1200px;margin:0 auto;padding:0 24px;position:relative;z-index:1;}
+header{border-bottom:1px solid var(--border);padding:18px 0;background:rgba(8,12,16,.96);
+  position:sticky;top:0;z-index:100;backdrop-filter:blur(10px);}
+.hdr{display:flex;align-items:center;justify-content:space-between;}
+.logo{display:flex;align-items:center;gap:12px;}
+.logo svg{width:34px;height:34px;}
+.logo-n{font-family:var(--disp);font-size:21px;font-weight:800;color:var(--accent);}
+.logo-s{font-size:9px;color:var(--muted);letter-spacing:.2em;text-transform:uppercase;margin-top:2px;}
+.hdr-r{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--muted);}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted);}
+.dot.on{background:var(--accent2);box-shadow:0 0 7px var(--accent2);animation:bl 2s infinite;}
+.dot.run{background:var(--accent);box-shadow:0 0 7px var(--accent);animation:bl .5s infinite;}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.35}}
+.tabs{display:flex;gap:0;margin:28px 0 0;border-bottom:1px solid var(--border);}
+.tab{padding:10px 24px;font-family:var(--mono);font-size:11px;letter-spacing:.15em;
+  text-transform:uppercase;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;
+  transition:all .2s;background:none;border-top:none;border-left:none;border-right:none;}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.panel{display:none;padding:28px 0 80px;}
+.panel.active{display:block;}
+.box{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:28px;
+  margin-bottom:28px;position:relative;overflow:hidden;}
+.box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.5;}
+.btit{font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:var(--muted);margin-bottom:20px;}
+label{display:block;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;font-family:var(--mono);}
+input[type=text]{width:100%;background:var(--card);border:1px solid var(--border);color:var(--text);
+  font-family:var(--mono);font-size:13px;padding:9px 13px;border-radius:3px;outline:none;transition:border-color .2s;}
+input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 0 1px rgba(0,229,255,.15);}
+.ranges{display:flex;flex-direction:column;gap:7px;margin-bottom:12px;}
+.rrow{display:flex;gap:7px;}
+.rrow input{flex:1;}
+.btnx{background:none;border:1px solid var(--border);color:var(--muted);cursor:pointer;
+  padding:6px 11px;font-size:13px;border-radius:3px;transition:all .2s;}
+.btnx:hover{border-color:var(--danger);color:var(--danger);}
+.btnadd{width:100%;background:none;border:1px dashed var(--border);color:var(--muted);cursor:pointer;
+  padding:8px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;border-radius:3px;
+  transition:all .2s;margin-bottom:18px;}
+.btnadd:hover{border-color:var(--accent);color:var(--accent);}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:22px;}
+.chk{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;}
+.chk input{display:none;}
+.chkb{width:15px;height:15px;border:1px solid var(--border);border-radius:2px;background:var(--card);
+  display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;}
+.chk:has(input:checked) .chkb{border-color:var(--accent);background:rgba(0,229,255,.1);}
+.chk:has(input:checked) .chkb::after{content:'v';color:var(--accent);font-size:10px;font-weight:bold;}
+.note{font-size:10px;color:var(--warn);margin-left:3px;}
+.btnscan{background:transparent;border:2px solid var(--accent);color:var(--accent);
+  font-family:var(--disp);font-size:13px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  padding:13px 36px;cursor:pointer;border-radius:3px;transition:all .2s;position:relative;overflow:hidden;}
+.btnscan::before{content:'';position:absolute;top:0;left:-100%;right:100%;bottom:0;
+  background:rgba(0,229,255,.1);transition:all .3s;}
+.btnscan:hover::before{left:0;right:0;}
+.btnscan:hover{box-shadow:0 0 18px rgba(0,229,255,.25);}
+.btnscan:disabled{opacity:.4;cursor:not-allowed;}
+.btnscan:disabled::before{display:none;}
+.pmeta{display:none;justify-content:space-between;align-items:center;margin-top:18px;margin-bottom:6px;}
+.pstat{font-size:11px;color:var(--muted);flex:1;}
+.ppct{font-size:11px;color:var(--accent);font-family:var(--mono);white-space:nowrap;}
+.peta{font-size:11px;color:var(--warn);font-family:var(--mono);white-space:nowrap;}
+.pbar{height:3px;background:var(--border);border-radius:2px;display:none;overflow:hidden;}
+.pfill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .6s ease;box-shadow:0 0 8px var(--accent);}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:28px;}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:16px 18px;}
+.sv{font-family:var(--disp);font-size:30px;font-weight:800;line-height:1;margin-bottom:4px;color:var(--accent);}
+.sv.ok{color:var(--accent2);} .sv.bad{color:var(--danger);} .sv.warn{color:var(--warn);}
+.sl{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);}
+.shdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;}
+.stit{font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:var(--muted);}
+.sright{display:flex;align-items:center;gap:10px;}
+.fil{background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--mono);
+  font-size:12px;padding:6px 12px;border-radius:3px;outline:none;width:190px;}
+.lscan{font-size:10px;color:var(--muted);}
+.btnpdf{background:none;border:1px solid var(--warn);color:var(--warn);font-family:var(--mono);
+  font-size:11px;letter-spacing:.1em;padding:7px 14px;border-radius:3px;cursor:pointer;transition:all .2s;}
+.btnpdf:hover{background:rgba(255,149,0,.1);}
+.btnpdf:disabled{opacity:.4;cursor:not-allowed;}
+.devs{display:flex;flex-direction:column;gap:7px;}
+.dev{background:var(--surface);border:1px solid var(--border);border-radius:4px;overflow:hidden;transition:border-color .2s;}
+.dev:hover{border-color:rgba(0,229,255,.3);}
+.dev.vuln{border-left:3px solid var(--danger);}
+.dhdr{display:grid;grid-template-columns:150px 220px 180px 1fr 120px auto;gap:0 18px;padding:14px 20px;cursor:pointer;align-items:center;}
+.dip{font-size:14px;font-weight:700;color:var(--accent);font-family:var(--mono);letter-spacing:.03em;}
+.dhn{color:var(--text);font-family:var(--sans);font-size:12px;font-weight:500;} .dven{color:var(--muted);font-family:var(--sans);font-size:11px;} .dos{color:var(--accent2);font-family:var(--mono);font-size:10px;opacity:.8;}
+.dtype{display:flex;align-items:center;gap:5px;min-width:120px;font-size:15px;}
+.dhn,.dven,.dos{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bgs{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;}
+.b{font-size:11px;padding:3px 9px;border-radius:3px;font-weight:700;white-space:nowrap;font-family:var(--mono);}
+.bp{background:rgba(0,229,255,.1);color:var(--accent);border:1px solid rgba(0,229,255,.2);}
+.bc{background:rgba(255,59,59,.15);color:var(--danger);border:1px solid rgba(255,59,59,.3);}
+.dbody{display:none;padding:0 20px 20px;border-top:1px solid var(--border);}
+.dbody.open{display:block;}
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:14px;}
+.dsec h4{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.pl,.cl{display:flex;flex-direction:column;gap:4px;}
+.pi,.ci{display:flex;align-items:center;gap:8px;font-size:11px;padding:5px 9px;border-radius:3px;}
+.pi{display:grid;grid-template-columns:110px 140px 130px 1fr;gap:4px 10px;align-items:start;padding:8px 12px;border-bottom:1px solid rgba(0,229,255,.06);} .pi:last-child{border-bottom:none;} .pi:hover{background:rgba(0,229,255,.04);border-radius:3px;}
+.ci{background:rgba(255,59,59,.07);border:1px solid rgba(255,59,59,.15);}
+.pn{color:var(--accent);font-weight:700;font-family:var(--mono);font-size:12px;}
+.ps{color:var(--text);font-family:var(--sans);font-size:12px;font-weight:500;}
+.pp{color:var(--muted);font-size:11px;font-family:var(--sans);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cid{color:var(--danger);font-weight:600;}
+.clk{color:var(--muted);font-size:10px;text-decoration:none;}
+.clk:hover{color:var(--accent);}
+
+.sev-CRITICAL{background:rgba(255,59,59,.2);color:#ff3b3b;border:1px solid rgba(255,59,59,.4);}
+.sev-HIGH    {background:rgba(255,107,53,.2);color:#ff6b35;border:1px solid rgba(255,107,53,.4);}
+.sev-MEDIUM  {background:rgba(255,149,0,.2); color:#ff9500;border:1px solid rgba(255,149,0,.4);}
+.sev-LOW     {background:rgba(255,204,0,.15);color:#ffcc00;border:1px solid rgba(255,204,0,.3);}
+.sev-UNKNOWN {background:rgba(74,102,128,.2);color:#4a6680;border:1px solid rgba(74,102,128,.3);}
+.cvss-score  {font-family:var(--disp);font-size:16px;font-weight:800;margin-right:6px;}
+.cve-row     {display:flex;flex-direction:column;gap:3px;padding:8px 10px;border-radius:3px;
+              background:rgba(255,59,59,.07);border:1px solid rgba(255,59,59,.15);margin-bottom:4px;}
+.cve-top     {display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.cve-desc    {font-size:11px;color:var(--muted);line-height:1.55;margin-top:3px;font-family:var(--sans);}
+
+
+.tog-label{display:flex;align-items:center;gap:12px;cursor:pointer;padding:12px 16px;
+  background:var(--card);border:1px solid var(--border);border-radius:4px;
+  transition:border-color .2s;min-width:220px;}
+.tog-label:hover{border-color:rgba(0,229,255,.3);}
+.tog-inp{display:none;}
+.tog-track{width:36px;height:20px;background:var(--border);border-radius:10px;
+  position:relative;transition:background .2s;flex-shrink:0;}
+.tog-thumb{width:14px;height:14px;background:var(--muted);border-radius:50%;
+  position:absolute;top:3px;left:3px;transition:all .2s;}
+.tog-label:has(.tog-inp:checked) .tog-track{background:rgba(0,229,255,.25);border:1px solid var(--accent);}
+.tog-label:has(.tog-inp:checked) .tog-thumb{background:var(--accent);left:17px;box-shadow:0 0 6px var(--accent);}
+
+.nocve{font-size:11px;color:var(--accent2);}
+.empty{text-align:center;padding:60px 20px;color:var(--muted);}
+.ei{font-size:36px;margin-bottom:14px;opacity:.2;font-family:monospace;}
+.et{font-size:12px;line-height:2;}
+/* MAP */
+.mapwrap{background:var(--surface);border:1px solid var(--border);border-radius:4px;overflow:hidden;position:relative;}
+.maptb{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--border);font-size:11px;color:var(--muted);}
+.maptb span{flex:1;}
+.btnsm{background:none;border:1px solid var(--border);color:var(--muted);font-family:var(--mono);
+  font-size:10px;padding:5px 11px;border-radius:3px;cursor:pointer;transition:all .2s;}
+.btnsm:hover{border-color:var(--accent);color:var(--accent);}
+#mapSvg{width:100%;height:780px;display:block;background:var(--bg);}
+.mapleg{display:flex;gap:20px;padding:10px 18px;border-top:1px solid var(--border);font-size:10px;color:var(--muted);flex-wrap:wrap;}
+.li{display:flex;align-items:center;gap:6px;}
+.ld{width:10px;height:10px;border-radius:50%;}
+.tip{position:absolute;background:var(--card);border:1px solid var(--border);border-radius:4px;
+  padding:8px 12px;font-size:11px;color:var(--text);pointer-events:none;opacity:0;
+  transition:opacity .15s;z-index:10;max-width:220px;line-height:1.7;}
+::-webkit-scrollbar{width:8px;}
+::-webkit-scrollbar-track{background:rgba(0,229,255,.05);border-radius:4px;}
+::-webkit-scrollbar-thumb{background:rgba(0,229,255,.35);border-radius:4px;} ::-webkit-scrollbar-thumb:hover{background:rgba(0,229,255,.6);}
+
+    @keyframes btnPulse {
+      0%,100% { box-shadow: 0 0 8px rgba(0,229,255,.4), inset 0 0 8px rgba(0,229,255,.05); border-color:#00e5ff; color:#00e5ff; }
+      50%      { box-shadow: 0 0 22px rgba(57,255,20,.7), inset 0 0 12px rgba(57,255,20,.1); border-color:#39ff14; color:#39ff14; }
+    }
+    #scanBtn.scanning { animation: btnPulse .9s ease-in-out infinite; }
+    @keyframes logoPulse {
+      0%,100% { color:#00e5ff; text-shadow: 0 0 10px #00e5ff, 0 0 20px rgba(0,229,255,.4); }
+      50%      { color:#39ff14; text-shadow: 0 0 14px #39ff14, 0 0 30px rgba(57,255,20,.6); }
+    }
+    .logo-scanning .logo-n { color: var(--accent); }
+    #scanLog { display:none; margin:0 0 16px 0; background:#060c14; border:1px solid rgba(0,229,255,.1); border-radius:4px; font-family:var(--mono); font-size:10px; line-height:1.7; }
+    #scanLogHeader { display:flex; justify-content:space-between; align-items:center; padding:8px 14px 4px; border-bottom:1px solid rgba(0,229,255,.08); }
+    #scanLogEntries { padding:8px 16px 12px; max-height:220px; overflow-y:auto; }
+    #scanLogEntries .log-found { color:#39ff14; font-weight:500; }
+    #scanLogEntries .log-cve   { color:var(--danger); }
+    #scanLogEntries .log-info  { color:#4a8fa8; }
+    #scanLogEntries .log-batch { color:var(--muted); }
+    #scanLogEntries::-webkit-scrollbar { width:8px; }
+    #scanLogEntries::-webkit-scrollbar-thumb { background:rgba(0,229,255,.4); border-radius:4px; } #scanLogEntries::-webkit-scrollbar-thumb:hover { background:rgba(0,229,255,.7); }
+
+
+/* WEB HEKTOR POLISH */
+.web-config-grid-top{display:grid;grid-template-columns:170px 1fr 170px;gap:10px;margin-top:16px;}
+.web-config-grid-toggles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px;align-items:end;}
+.web-config-grid-bottom{display:grid;grid-template-columns:220px 1fr;gap:10px;margin-top:10px;align-items:end;}
+.web-card{padding:16px 18px;margin-bottom:12px;background:var(--card);border:1px solid var(--border);border-left:3px solid var(--accent2);border-radius:6px;box-shadow:0 0 0 1px rgba(0,229,255,.02) inset;}
+.web-card.error{border-left-color:var(--danger);}
+.web-card-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap;}
+.web-card-title{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.web-link-main{color:var(--accent);font-family:var(--mono);font-size:12px;text-decoration:none;word-break:break-all;}
+.web-link-main:hover,.web-url-link:hover{color:#8bf5ff;}
+.web-card-subtitle{font-size:12px;color:var(--text);margin-top:4px;font-weight:600;}
+.web-card-meta{font-size:10px;color:var(--muted);margin-top:4px;word-break:break-all;font-family:var(--mono);}
+.web-chip{display:inline-flex;align-items:center;gap:6px;font-size:10px;padding:2px 8px;border-radius:999px;border:1px solid var(--border);color:var(--muted);font-family:var(--mono);}
+.web-chip.ok{color:var(--accent2);border-color:rgba(57,255,20,.35);background:rgba(57,255,20,.06);}
+.web-chip.warn{color:var(--warn);border-color:rgba(255,149,0,.35);background:rgba(255,149,0,.06);}
+.web-chip.info{color:var(--accent);border-color:rgba(0,229,255,.25);background:rgba(0,229,255,.05);}
+.web-chip.bad{color:var(--danger);border-color:rgba(255,59,59,.35);background:rgba(255,59,59,.06);}
+.web-chip.neutral{color:var(--muted);}
+.web-chip.tight{padding:1px 6px;font-size:9px;}
+.web-summary-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.web-preview{margin-top:10px;padding:10px 12px;border:1px solid rgba(0,229,255,.08);background:rgba(0,229,255,.03);border-radius:4px;font-size:11px;color:var(--text);line-height:1.75;}
+.web-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:12px;margin-top:12px;}
+.web-pane{grid-column:span 4;background:var(--surface);border:1px solid var(--border);padding:12px;border-radius:6px;min-width:0;}
+.web-pane.wide{grid-column:span 8;}
+.web-pane.full{grid-column:1 / -1;}
+.web-pane-title{font-size:10px;color:var(--accent2);font-family:var(--mono);margin-bottom:8px;letter-spacing:.12em;text-transform:uppercase;display:flex;justify-content:space-between;gap:10px;align-items:center;}
+.web-pane-title .count{color:var(--muted);font-size:9px;letter-spacing:.08em;}
+.web-rows{display:flex;flex-direction:column;gap:7px;}
+.web-row{display:flex;gap:8px;align-items:flex-start;justify-content:space-between;padding:7px 8px;border:1px solid rgba(0,229,255,.06);background:rgba(0,229,255,.025);border-radius:4px;}
+.web-row-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+.web-url-link{font-size:10px;color:var(--accent);word-break:break-all;text-decoration:none;font-family:var(--mono);}
+.web-row-sub{font-size:10px;color:var(--muted);}
+.web-row-actions{display:flex;gap:6px;align-items:center;flex-shrink:0;}
+.web-note-list{display:flex;flex-direction:column;gap:5px;}
+.web-note{font-size:11px;color:var(--warn);padding:6px 8px;border:1px solid rgba(255,149,0,.12);background:rgba(255,149,0,.05);border-radius:4px;}
+.web-empty{font-size:11px;color:var(--muted);}
+.web-flags{display:flex;flex-direction:column;gap:6px;}
+.web-flag{padding:8px 9px;border:1px solid rgba(255,149,0,.25);background:rgba(255,149,0,.08);border-radius:4px;}
+.web-flag-val{font-size:10px;color:var(--warn);font-family:var(--mono);word-break:break-all;}
+.web-flag-src{font-size:10px;color:var(--muted);word-break:break-all;margin-top:4px;}
+.web-header-box{margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,229,255,.06);}
+.web-header-box pre{white-space:pre-wrap;font-size:10px;color:var(--muted);font-family:var(--mono);line-height:1.6;max-height:160px;overflow:auto;}
+.web-child-wrap{margin-top:12px;background:var(--surface);border:1px solid var(--border);padding:12px;border-radius:6px;}
+.web-child-grid{display:grid;grid-template-columns:1fr;gap:10px;}
+.web-child-card{padding:14px 16px;border:1px solid rgba(0,229,255,.10);background:rgba(0,229,255,.025);border-radius:6px;min-width:0;border-left:2px solid rgba(0,229,255,.2);}
+.web-child-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap;}
+.web-child-meta{font-size:10px;color:var(--muted);margin-top:5px;line-height:1.6;font-family:var(--mono);}
+.web-child-preview{font-size:11px;color:var(--text);line-height:1.65;margin-top:8px;}
+.web-child-panes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px;}
+.web-child-pane{background:var(--surface);border:1px solid var(--border);padding:8px 10px;border-radius:4px;font-size:10px;color:var(--muted);min-width:0;}
+.web-child-pane .wcp-title{font-size:9px;color:var(--accent2);font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px;}
+.web-child-pane .wcp-body{font-size:10px;color:var(--text);line-height:1.6;word-break:break-all;}
+.web-child-pane.flagpane{border-color:rgba(255,149,0,.3);background:rgba(255,149,0,.04);}
+.web-badge-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.web-log-meta{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 10px;}
+.web-log-list{max-height:280px;overflow:auto;border:1px solid var(--border);background:var(--surface);border-radius:6px;padding:10px;}
+.web-log-entry{display:grid;grid-template-columns:58px 1fr auto;gap:10px;align-items:start;padding:6px 8px;border-bottom:1px solid rgba(0,229,255,.05);font-size:11px;}
+.web-log-entry:last-child{border-bottom:none;}
+.web-log-time{font-family:var(--mono);color:var(--muted);font-size:10px;}
+.web-log-msg{color:var(--text);line-height:1.6;word-break:break-word;}
+.web-log-cls-ok .web-log-msg{color:var(--accent2);}
+.web-log-cls-bad .web-log-msg{color:var(--danger);}
+.web-log-cls-batch .web-log-msg{color:var(--accent);}
+.web-log-cls-info .web-log-msg{color:#8ed8e8;}
+
+@media (max-width:1200px){
+  .web-config-grid-toggles{grid-template-columns:repeat(3,minmax(0,1fr));}
+}
+@media (max-width:980px){
+  .web-config-grid-top,.web-config-grid-bottom{grid-template-columns:1fr;}
+  .web-config-grid-toggles{grid-template-columns:repeat(3,minmax(0,1fr));}
+  .web-pane,.web-pane.wide{grid-column:span 6;}
+  .web-child-grid{grid-template-columns:1fr;}
+  .web-child-panes{grid-template-columns:1fr !important;}
+}
+@media (max-width:700px){
+  .web-config-grid-toggles{grid-template-columns:1fr;}
+  .web-pane,.web-pane.wide{grid-column:1 / -1;}
+  .web-row,.web-card-head,.web-child-head{flex-direction:column;align-items:flex-start;}
+  .web-row-actions{width:100%;justify-content:flex-start;}
+}
+
+</style>
+</head>
+<body>
+<header>
+  <div class="w">
+    <div class="hdr">
+      <div class="logo" id="logoWrap">
+
+        <div>
+          <div class="logo-n">VulnScan Pro</div>
+          <div class="logo-s">Network vulnerability scanner · v1.0.0</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</header>
+
+<div class="w">
+  <div class="tabs" style="display:flex;align-items:center;">
+    <button class="tab active" id="tabScan"    onclick="showTab('Scan',this)">Scan</button>
+    <button class="tab"        id="tabHosts"   onclick="showTab('Hosts',this)">Hosts</button>
+    <button class="tab"        id="tabMap"     onclick="showTab('Map',this)">Map</button>
+    <button class="tab"        id="tabTraffic" onclick="showTab('Traffic',this)">Traffic</button>
+    <button class="tab"        id="tabLogs"    onclick="showTab('Logs',this)">Events <span id="alertBadge" style="display:none;background:var(--danger);color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;margin-left:4px;"></span></button>
+    <span style="flex:1;"></span>
+    <button class="tab" onclick="openSettings()" style="border-color:var(--muted);color:var(--muted);" title="Settings, scheduler, blocklists, system check">⚙ Settings</button>
+  </div>
+
+  <!-- Hidden panel buttons — kept for showTab() compatibility -->
+  <span style="display:none;">
+    <button id="tabMonitor"></button>
+    <button id="tabHistory"></button>
+    <button id="tabBlacklist"></button>
+    <button id="tabSystem"></button>
+  </span>
+
+  <!-- SCAN -->
+  <div class="panel active" id="panelScan">
+    <div class="box">
+      <div class="btit">// Scan setup</div>
+      <label>Network ranges</label>
+      <div class="ranges" id="rangesList"></div>
+      <button class="btnadd" onclick="addRange()">+ Add VLAN / subnet</button>
+      <div class="opts">
+        <label class="tog-label">
+          <input type="checkbox" id="cveCheck" class="tog-inp" checked>
+          <div class="tog-track"><div class="tog-thumb"></div></div>
+          <div>
+            <div style="font-size:12px;color:var(--text);font-weight:600;">CVE scan</div>
+            <div style="font-size:10px;color:var(--muted);">nmap --script vuln &mdash; langsamer, aber tief</div>
+          </div>
+        </label>
+        <label class="tog-label">
+          <input type="checkbox" id="osCheck" checked class="tog-inp">
+          <div class="tog-track"><div class="tog-thumb"></div></div>
+          <div>
+            <div style="font-size:12px;color:var(--text);font-weight:600;">OS detection</div>
+            <div style="font-size:10px;color:var(--muted);">Identify operating system</div>
+          </div>
+        </label>
+        <label class="tog-label">
+          <input type="checkbox" id="nvdCheck" checked class="tog-inp">
+          <div class="tog-track"><div class="tog-thumb"></div></div>
+          <div>
+            <div style="font-size:12px;color:var(--text);font-weight:600;">NVD enrichment</div>
+            <div style="font-size:10px;color:var(--muted);">CVSS score and severity from the NVD API</div>
+          </div>
+        </label>
+
+      </div>
+      <div style="padding:10px 16px;background:var(--card);border:1px solid var(--border);border-radius:4px;">
+        <div style="font-size:9px;color:var(--muted);font-family:var(--mono);letter-spacing:.12em;margin-bottom:8px;">PORT PROFILE</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
+          <label style="display:flex;flex-direction:column;align-items:flex-start;gap:3px;cursor:pointer;padding:8px 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface);transition:border-color .15s;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <input type="radio" name="portMode" value="top1000" checked style="accent-color:var(--accent2);">
+              <span style="font-size:11px;color:var(--text);font-weight:600;">STD</span>
+            </div>
+            <span style="font-size:9px;color:#e6a817;font-family:var(--mono);">TCP top 1000 · fixed LAN UDP ports</span>
+          </label>
+          <label style="display:flex;flex-direction:column;align-items:flex-start;gap:3px;cursor:pointer;padding:8px 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface);transition:border-color .15s;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <input type="radio" name="portMode" value="iana" style="accent-color:var(--accent2);">
+              <span style="font-size:11px;color:var(--text);font-weight:600;">HIGH</span>
+            </div>
+            <span id="ianaTcpLabel" style="font-size:9px;color:var(--accent2);font-family:var(--mono);">ALL IANA TCP</span>
+          </label>
+          <label style="display:flex;flex-direction:column;align-items:flex-start;gap:3px;cursor:pointer;padding:8px 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface);transition:border-color .15s;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <input type="radio" name="portMode" value="iana_udp" style="accent-color:var(--accent2);">
+              <span style="font-size:11px;color:var(--text);font-weight:600;">HIGH+</span>
+            </div>
+            <span id="ianaUdpLabel" style="font-size:9px;color:var(--accent2);font-family:var(--mono);">IANA TCP + UDP</span>
+          </label>
+          <label style="display:flex;flex-direction:column;align-items:flex-start;gap:3px;cursor:pointer;padding:8px 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface);transition:border-color .15s;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <input type="radio" name="portMode" value="deep" style="accent-color:var(--accent2);">
+              <span style="font-size:11px;color:var(--text);font-weight:600;">DEEP</span>
+            </div>
+            <span style="font-size:9px;color:var(--accent2);font-family:var(--mono);">TCP 1-65535 · UDP top 100</span>
+          </label>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:4px;">
+        <button class="btnscan" id="scanBtn" onclick="startScan()">START SCAN</button>
+        <button class="btnscan" id="cancelBtn" onclick="cancelScan()" style="display:none;border-color:var(--danger);color:var(--danger);">CANCEL</button>
+      </div>
+      <div id="progressBox" style="display:none;margin-top:10px;padding:10px 16px;background:var(--bg);border:1px solid var(--border);border-radius:4px;">
+        <div class="pmeta" id="pmeta" style="margin-bottom:6px;">
+          <span style="font-size:11px;color:var(--muted);font-family:var(--mono);">Started:&nbsp;<span id="pStartTime" style="color:var(--text);">--</span></span>
+          <span style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-left:18px;">Elapsed:&nbsp;<span id="pElapsed" style="color:var(--accent2);">00:00</span></span>
+          <span style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-left:18px;">ETA:&nbsp;<span class="peta" id="peta">--</span></span>
+          <span class="pstat" id="pstat" style="flex:1;text-align:right;margin-left:18px;font-size:11px;color:var(--muted);font-family:var(--mono);"></span>
+        </div>
+        <div class="pbar" id="pbar"><div class="pfill" id="pfill" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="sv"      id="s0">--</div><div class="sl">Devices</div></div>
+      <div class="stat"><div class="sv ok"   id="s1">--</div><div class="sl">Without CVEs</div></div>
+      <div class="stat"><div class="sv bad"  id="s2">--</div><div class="sl">With CVEs</div></div>
+      <div class="stat"><div class="sv warn" id="s3">--</div><div class="sl">Open ports</div></div>
+    </div>
+
+    <!-- Scan log — full width between statistics and device list -->
+    <div id="scanLog" style="display:none;margin:0 0 20px 0;background:#050d15;border:1px solid rgba(0,229,255,.18);border-radius:6px;overflow:hidden;">
+      <div onclick="toggleLog()" style="display:flex;justify-content:space-between;align-items:center;padding:8px 18px;border-bottom:1px solid rgba(0,229,255,.1);cursor:pointer;background:rgba(0,229,255,.04);">
+        <span style="color:var(--accent);font-size:10px;letter-spacing:.14em;font-family:var(--mono);">// SCAN LOG</span>
+        <span id="logToggleBtn" style="color:var(--muted);font-size:9px;font-family:var(--mono);">▲ COLLAPSE</span>
+      </div>
+      <div id="scanLogEntries" style="padding:12px 20px 16px;max-height:280px;overflow-y:auto;font-family:var(--mono);font-size:12px;line-height:2.1;"></div>
+    </div>
+
+    <div id="resSec" style="display:none;">
+      <div class="shdr">
+        <div class="stit">// Discovered devices</div>
+        <div class="sright">
+          <input class="fil" type="text" placeholder="Filter..." oninput="filterDevs(this.value)">
+          <button class="btnpdf" id="btnPdf" onclick="dlReport()">PDF report</button>
+          <div class="lscan" id="lscan"></div>
+        </div>
+      </div>
+      <div class="devs" id="devGrid"></div>
+    </div>
+
+<div id="emptyState"></div>
+  </div>
+
+
+  <!-- MAP -->
+  <div class="panel" id="panelMap">
+    <div class="mapwrap">
+      <div class="maptb">
+        <span id="mapInfo">Run a scan first.</span>
+        <div style="display:flex;gap:8px;align-items:center;margin-left:auto;">
+          <select id="mapMode" onchange="switchMapMode()" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:3px;padding:4px 8px;font-family:var(--mono);font-size:11px;cursor:pointer;">
+            <option value="force">🔗 Layer 3 - all devices</option>
+            <option value="vlan">🗺 Layer 3 - VLAN overview</option>
+            <option value="arch">🛡 BSI architecture check</option>
+          </select>
+          <button class="btnsm" onclick="resetZ()">Reset zoom</button>
+          <button class="btnsm" onclick="togLabels()">Toggle labels</button>
+        </div>
+      </div>
+      <svg id="mapSvg"></svg>
+      <div id="archCheck" style="display:none;padding:16px 20px;"></div>
+      <div id="tip" class="tip"></div>
+      <div class="mapleg" id="mapLeg">
+        <div class="li"><div class="ld" style="background:#00e5ff"></div>Router/gateway</div>
+        <div class="li"><div class="ld" style="background:#39ff14"></div>No CVE found</div>
+        <div class="li"><div class="ld" style="background:#ff3b3b"></div>CVE found</div>
+        <div class="li"><div class="ld" style="background:#ff9500"></div>Unknown</div>
+        <div class="li"><div class="ld" style="background:#7b8a96"></div>Known offline</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VLAN / HOSTS -->
+  <div class="panel" id="panelHosts">
+    <div class="box">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+        <div class="btit" style="margin:0">// VLAN / Hosts</div>
+        <span style="font-size:11px;color:var(--muted);">All devices ever found - grey means last seen offline</span>
+      </div>
+      <div id="hostsList"><div class="empty"><div class="ei">[~]</div><div class="et">No scan has been run yet.</div></div></div>
+    </div>
+  </div>
+
+  <!-- SCHEDULER & ALERTS -->
+  <div class="panel" id="panelMonitor">
+    <div class="box" style="margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+        <div class="btit" style="margin:0">// Scheduled scans</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px;max-width:620px;">
+
+        <!-- Aktivieren -->
+        <label class="chk" style="font-size:13px;">
+          <input type="checkbox" id="schedEnabled" onchange="updateSchedUI()">
+          <div class="chkb"></div>
+          Enable scheduled scans
+        </label>
+
+        <!-- Modus -->
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span style="font-size:10px;color:var(--muted);font-family:var(--mono);letter-spacing:.08em;margin-right:6px;">MODE</span>
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:11px;color:var(--text);">
+            <input type="radio" name="schedMode" value="interval" checked onchange="updateSchedUI()" style="accent-color:var(--accent2);"> INTERVAL
+          </label>
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:11px;color:var(--text);">
+            <input type="radio" name="schedMode" value="daily" onchange="updateSchedUI()" style="accent-color:var(--accent2);"> DAILY
+          </label>
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:11px;color:var(--text);">
+            <input type="radio" name="schedMode" value="weekly" onchange="updateSchedUI()" style="accent-color:var(--accent2);"> WEEKLY
+          </label>
+        </div>
+
+        <!-- Intervall-Zeile -->
+        <div id="schedIntervalRow" style="display:flex;gap:20px;align-items:flex-end;flex-wrap:wrap;">
+          <div>
+            <label>Interval (minutes)</label>
+            <input type="number" id="schedInterval" value="60" min="10" style="max-width:110px;background:var(--card);color:var(--accent2);border:1px solid var(--border);padding:6px 10px;font-family:var(--mono);font-size:13px;border-radius:3px;">
+          </div>
+        </div>
+
+        <!-- Time row (daily and weekly) -->
+        <div id="schedTimeRow" style="display:none;align-items:flex-end;gap:20px;flex-wrap:wrap;">
+          <div>
+            <label>Time</label>
+            <input type="time" id="schedTime" value="02:00" style="background:var(--card);color:var(--accent2);border:1px solid var(--border);padding:6px 10px;font-family:var(--mono);font-size:13px;border-radius:3px;">
+          </div>
+        </div>
+
+        <!-- Wochentag-Zeile -->
+        <div id="schedWeekdayRow" style="display:none;flex-direction:column;gap:8px;">
+          <label style="margin-bottom:0;">Weekdays</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;color:var(--text);"><input type="checkbox" class="schedWd" value="1" style="accent-color:var(--accent2);"> Mo</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;color:var(--text);"><input type="checkbox" class="schedWd" value="2" style="accent-color:var(--accent2);"> Di</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;color:var(--text);"><input type="checkbox" class="schedWd" value="3" style="accent-color:var(--accent2);"> Mi</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;color:var(--text);"><input type="checkbox" class="schedWd" value="4" style="accent-color:var(--accent2);"> Do</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;color:var(--text);"><input type="checkbox" class="schedWd" value="5" style="accent-color:var(--accent2);"> Fr</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;color:var(--text);"><input type="checkbox" class="schedWd" value="6" style="accent-color:var(--accent2);"> Sa</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;color:var(--text);"><input type="checkbox" class="schedWd" value="0" style="accent-color:var(--accent2);"> So</label>
+          </div>
+        </div>
+
+        <!-- Port profile + UDP -->
+        <div style="display:flex;gap:20px;align-items:flex-end;flex-wrap:wrap;">
+          <div>
+            <label>Port profile</label>
+            <select id="schedPortMode" style="background:var(--card);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:3px;font-family:var(--mono);font-size:11px;">
+              <option value="top1000">STD (Nmap top 1000)</option>
+              <option value="iana">HIGH (all IANA-assigned TCP ports)</option>
+              <option value="iana_udp">HIGH+ (all IANA-assigned TCP and UDP ports)</option>
+              <option value="deep">DEEP (all TCP ports 1-65535 + UDP top 100)</option>
+                          </select>
+          </div>
+        </div>
+
+        <div id="schedStatus" style="font-size:11px;color:var(--muted);"></div>
+        <button class="btnscan" onclick="saveScheduler()" style="letter-spacing:.1em;max-width:200px;">Save</button>
+      </div>
+    </div>
+    <div class="box">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+        <div class="btit" style="margin:0">// Alerts</div>
+        <button class="btnsm" onclick="ackAll()">Acknowledge all</button>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">
+        Alert trigger: <span style="color:var(--accent2);">New device detected on the network</span> &nbsp;·&nbsp; <span style="color:var(--warn);">CVE found</span>
+      </div>
+      <div id="alertsList"><div class="empty"><div class="ei">[ok]</div><div class="et">No alerts available.</div></div></div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="panel" id="panelHistory">
+
+    <!-- Gespeicherte PDF Reports -->
+    <div class="box" style="margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+        <div class="btit" style="margin:0;">// Saved reports</div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:10px;color:var(--muted);font-family:var(--mono);letter-spacing:.08em;">MAX. REPORTS:</span>
+          <input type="number" id="maxReportsInput" value="3" min="1" max="20"
+            style="width:54px;background:var(--card);color:var(--text);border:1px solid var(--border);
+                   padding:4px 8px;border-radius:3px;font-family:var(--mono);font-size:12px;text-align:center;"
+            onchange="saveMaxReports(this.value)">
+          <span style="font-size:10px;color:var(--muted);">· saved automatically when exporting a PDF</span>
+        </div>
+      </div>
+      <div id="savedReportsList">
+        <div class="empty" style="padding:16px 0;"><div class="et">No reports saved yet.</div></div>
+      </div>
+    </div>
+
+    <!-- Scan-Verlauf -->
+    <div class="box">
+      <div class="btit">// Scan history (last 20 scans)</div>
+      <div id="historyList"><div class="empty"><div class="ei">[~]</div><div class="et">No scan has been run yet.</div></div></div>
+    </div>
+  </div>
+
+  <!-- LOGS -->
+  <div class="panel" id="panelLogs">
+    <!-- Stats stripe -->
+    <div class="box" style="margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+        <div class="btit" style="margin:0;">// Event-Log &amp; Report</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);cursor:pointer;font-family:var(--mono);">
+            <input type="checkbox" id="logsLiveTail" checked onchange="toggleLogsLive()" style="accent-color:var(--accent2);">
+            LIVE TAIL
+          </label>
+          <button class="btnsm" onclick="loadLogs()">⟳ Update</button>
+        </div>
+      </div>
+      <div id="logsStats" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;">
+        <div style="background:var(--card);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:4px;padding:10px 14px;">
+          <div id="lsTotal" style="font-size:22px;font-weight:700;color:var(--text);font-family:var(--mono);">--</div>
+          <div style="font-size:9px;color:var(--muted);font-family:var(--mono);letter-spacing:.1em;">TOTAL</div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-left:3px solid #b00020;border-radius:4px;padding:10px 14px;">
+          <div id="lsCritical" style="font-size:22px;font-weight:700;color:#ff4444;font-family:var(--mono);">--</div>
+          <div style="font-size:9px;color:var(--muted);font-family:var(--mono);letter-spacing:.1em;">CRITICAL</div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-left:3px solid #d9480f;border-radius:4px;padding:10px 14px;">
+          <div id="lsError" style="font-size:22px;font-weight:700;color:#ff8a4a;font-family:var(--mono);">--</div>
+          <div style="font-size:9px;color:var(--muted);font-family:var(--mono);letter-spacing:.1em;">ERROR</div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-left:3px solid #c98a00;border-radius:4px;padding:10px 14px;">
+          <div id="lsWarn" style="font-size:22px;font-weight:700;color:#e6a817;font-family:var(--mono);">--</div>
+          <div style="font-size:9px;color:var(--muted);font-family:var(--mono);letter-spacing:.1em;">WARN</div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-left:3px solid #1b7f3a;border-radius:4px;padding:10px 14px;">
+          <div id="lsInfo" style="font-size:22px;font-weight:700;color:#39ff14;font-family:var(--mono);">--</div>
+          <div style="font-size:9px;color:var(--muted);font-family:var(--mono);letter-spacing:.1em;">INFO</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="box" style="margin-bottom:14px;">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+        <div>
+          <label style="font-size:9px;color:var(--muted);font-family:var(--mono);letter-spacing:.1em;">SEVERITY</label>
+          <select id="logFilterSev" onchange="loadLogs()" style="background:var(--card);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:3px;font-family:var(--mono);font-size:11px;">
+            <option value="">All</option>
+            <option value="critical">CRITICAL</option>
+            <option value="error">ERROR</option>
+            <option value="warn">WARN</option>
+            <option value="info">INFO</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:9px;color:var(--muted);font-family:var(--mono);letter-spacing:.1em;">SOURCE</label>
+          <select id="logFilterSrc" onchange="loadLogs()" style="background:var(--card);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:3px;font-family:var(--mono);font-size:11px;">
+            <option value="">All</option>
+            <option value="scan">scan</option>
+            <option value="scheduler">scheduler</option>
+            <option value="alert">alert</option>
+            <option value="traffic">traffic</option>
+            <option value="system">system</option>
+            <option value="user">user</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:9px;color:var(--muted);font-family:var(--mono);letter-spacing:.1em;">HOST</label>
+          <input type="text" id="logFilterHost" placeholder="e.g. 192.168.1." oninput="debouncedLoadLogs()" style="width:150px;background:var(--card);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:3px;font-family:var(--mono);font-size:11px;">
+        </div>
+        <div>
+          <label style="font-size:9px;color:var(--muted);font-family:var(--mono);letter-spacing:.1em;">SEARCH</label>
+          <input type="text" id="logFilterSearch" placeholder="Full text..." oninput="debouncedLoadLogs()" style="width:220px;background:var(--card);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:3px;font-family:var(--mono);font-size:11px;">
+        </div>
+        <div>
+          <label style="font-size:9px;color:var(--muted);font-family:var(--mono);letter-spacing:.1em;">VON</label>
+          <input type="datetime-local" id="logFilterFrom" onchange="loadLogs()" style="background:var(--card);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:3px;font-family:var(--mono);font-size:11px;">
+        </div>
+        <div>
+          <label style="font-size:9px;color:var(--muted);font-family:var(--mono);letter-spacing:.1em;">BIS</label>
+          <input type="datetime-local" id="logFilterTo" onchange="loadLogs()" style="background:var(--card);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:3px;font-family:var(--mono);font-size:11px;">
+        </div>
+        <div>
+          <label style="font-size:9px;color:var(--muted);font-family:var(--mono);letter-spacing:.1em;">LIMIT</label>
+          <select id="logFilterLimit" onchange="loadLogs()" style="background:var(--card);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:3px;font-family:var(--mono);font-size:11px;">
+            <option value="100">100</option>
+            <option value="200" selected>200</option>
+            <option value="500">500</option>
+            <option value="1000">1000</option>
+            <option value="2000">2000</option>
+          </select>
+        </div>
+        <button class="btnsm" onclick="resetLogFilters()" style="margin-left:4px;">Reset filters</button>
+      </div>
+    </div>
+
+    <!-- Export + clear bar -->
+    <div class="box" style="margin-bottom:14px;padding:10px 16px;">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <span style="font-size:10px;color:var(--muted);font-family:var(--mono);letter-spacing:.1em;margin-right:8px;">EXPORT:</span>
+        <button class="btnsm" onclick="exportLogs('pdf')" style="border-color:var(--accent2);color:var(--accent2);">↓ PDF</button>
+        <button class="btnsm" onclick="exportLogs('csv')" style="border-color:var(--accent2);color:var(--accent2);">↓ CSV</button>
+        <button class="btnsm" onclick="exportLogs('syslog')" style="border-color:var(--accent2);color:var(--accent2);">↓ Syslog</button>
+        <span style="font-size:10px;color:var(--muted);margin-left:10px;">Export uses current filters</span>
+        <div style="flex:1"></div>
+        <button class="btnsm" onclick="clearLogs(true)" style="border-color:var(--warn);color:var(--warn);">Delete filtered</button>
+        <button class="btnsm" onclick="clearLogs(false)" style="border-color:var(--danger);color:var(--danger);">Delete all</button>
+      </div>
+    </div>
+
+    <!-- Event table -->
+    <div class="box">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div class="btit" style="margin:0;">// Events</div>
+        <span id="logsCount" style="font-size:11px;color:var(--muted);font-family:var(--mono);">--</span>
+      </div>
+      <div id="logsTable" style="overflow:auto;max-height:600px;">
+        <div class="empty" style="padding:24px 0;"><div class="ei">[~]</div><div class="et">No events loaded.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BLACKLIST -->
+  <div class="panel" id="panelBlacklist">
+    <!-- Stats + Update All -->
+    <div class="box" style="margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+        <div class="btit" style="margin:0;">// IP blocklist</div>
+        <div style="display:flex;gap:8px;">
+          <button class="btnscan" id="blUpdateAllBtn" onclick="blUpdateAll()" style="padding:8px 18px;font-size:11px;">⟳ Update all enabled feeds</button>
+          <button class="btnsm" onclick="loadBlacklist()">⟳ Reload</button>
+        </div>
+      </div>
+      <div id="blStats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+        <div style="background:var(--card);border:1px solid var(--border);border-left:3px solid #b00020;border-radius:4px;padding:10px 14px;">
+          <div id="blsTotal" style="font-size:22px;font-weight:700;color:#ff4444;font-family:var(--mono);">--</div>
+          <div style="font-size:9px;color:var(--muted);font-family:var(--mono);letter-spacing:.1em;">ACTIVE ENTRIES</div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:4px;padding:10px 14px;">
+          <div id="blsFeeds" style="font-size:22px;font-weight:700;color:var(--text);font-family:var(--mono);">--</div>
+          <div style="font-size:9px;color:var(--muted);font-family:var(--mono);letter-spacing:.1em;">ENABLED FEEDS</div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-left:3px solid var(--warn);border-radius:4px;padding:10px 14px;">
+          <div id="blsCustom" style="font-size:22px;font-weight:700;color:#e6a817;font-family:var(--mono);">--</div>
+          <div style="font-size:9px;color:var(--muted);font-family:var(--mono);letter-spacing:.1em;">CUSTOM ENTRIES</div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-left:3px solid var(--accent2);border-radius:4px;padding:10px 14px;">
+          <div id="blsAll" style="font-size:22px;font-weight:700;color:var(--accent2);font-family:var(--mono);">--</div>
+          <div style="font-size:9px;color:var(--muted);font-family:var(--mono);letter-spacing:.1em;">TOTAL IN DB</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feeds -->
+    <div class="box" style="margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div class="btit" style="margin:0;">// Feeds</div>
+        <span style="font-size:10px;color:var(--muted);">Multiple feeds can be enabled simultaneously</span>
+      </div>
+      <div id="blFeedsList" style="overflow:auto;">
+        <div class="empty" style="padding:16px 0;"><div class="et">Loading feeds...</div></div>
+      </div>
+
+      <!-- Add custom feed -->
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+        <div style="font-size:10px;color:var(--muted);font-family:var(--mono);letter-spacing:.1em;margin-bottom:8px;">ADD CUSTOM FEED</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+          <div><label style="font-size:9px;color:var(--muted);">Name</label><br>
+            <input type="text" id="blFeedName" placeholder="e.g. My threat intelligence feed" style="width:180px;background:var(--card);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:3px;font-family:var(--mono);font-size:11px;"></div>
+          <div style="flex:1"><label style="font-size:9px;color:var(--muted);">URL</label><br>
+            <input type="text" id="blFeedUrl" placeholder="https://example.com/blocklist.txt" style="width:100%;background:var(--card);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:3px;font-family:var(--mono);font-size:11px;"></div>
+          <div><label style="font-size:9px;color:var(--muted);">Format</label><br>
+            <select id="blFeedFormat" style="background:var(--card);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:3px;font-family:var(--mono);font-size:11px;">
+              <option value="netset">netset / CIDR</option>
+              <option value="plain">plain IPs</option>
+              <option value="spamhaus">Spamhaus DROP</option>
+            </select>
+          </div>
+          <button class="btnsm" onclick="blAddFeed()" style="border-color:var(--accent2);color:var(--accent2);">+ Add</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lookup -->
+    <div class="box" style="margin-bottom:14px;">
+      <div class="btit">// IP lookup</div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
+        <input type="text" id="blLookupIp" placeholder="Check IP, e.g. 203.0.113.10" style="flex:1;max-width:360px;background:var(--card);color:var(--text);border:1px solid var(--border);padding:8px 12px;border-radius:3px;font-family:var(--mono);font-size:12px;"
+          onkeydown="if(event.key==='Enter') blLookup()">
+        <button class="btnsm" onclick="blLookup()" style="border-color:var(--accent2);color:var(--accent2);padding:8px 18px;">Check</button>
+      </div>
+      <div id="blLookupResult" style="margin-top:10px;"></div>
+    </div>
+
+    <!-- Custom Entries -->
+    <div class="box">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div class="btit" style="margin:0;">// Custom entries</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:flex-end;">
+        <div><label style="font-size:9px;color:var(--muted);">IP or CIDR</label><br>
+          <input type="text" id="blCustomIp" placeholder="1.2.3.4 or 10.0.0.0/24" style="width:220px;background:var(--card);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:3px;font-family:var(--mono);font-size:11px;"
+            onkeydown="if(event.key==='Enter') blAddCustom()"></div>
+        <div style="flex:1;min-width:180px;"><label style="font-size:9px;color:var(--muted);">Note (optional)</label><br>
+          <input type="text" id="blCustomNotes" placeholder="e.g. known attacker from log XYZ" style="width:100%;background:var(--card);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:3px;font-family:var(--mono);font-size:11px;"
+            onkeydown="if(event.key==='Enter') blAddCustom()"></div>
+        <button class="btnsm" onclick="blAddCustom()" style="border-color:var(--accent2);color:var(--accent2);">+ Entry</button>
+      </div>
+      <div id="blCustomList"><div class="empty" style="padding:12px 0;"><div class="et">No custom entries yet.</div></div></div>
+    </div>
+  </div>
+
+  <!-- TRAFFIC -->
+  <div class="panel" id="panelTraffic">
+    <!-- Control + Status -->
+    <div class="box" style="margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+        <div>
+          <div class="btit" style="margin:0;">// Live traffic monitor</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px;">Shows which process connects to which IP · automatic blocklist check</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button id="trStartBtn"  class="btnscan" onclick="trStart()" style="padding:8px 22px;font-size:11px;">▶ START</button>
+          <button id="trStopBtn"   class="btnsm" onclick="trStop()" style="border-color:var(--warn);color:var(--warn);">⏸ STOP</button>
+          <button class="btnsm" onclick="trClear()" style="border-color:var(--danger);color:var(--danger);">Clear table</button>
+        </div>
+      </div>
+      <div id="trStatusBar" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;">
+        <div style="background:var(--card);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:4px;padding:10px 14px;">
+          <div id="trStatStatus" style="font-size:14px;font-weight:700;color:var(--muted);font-family:var(--mono);">--</div>
+          <div style="font-size:9px;color:var(--muted);font-family:var(--mono);letter-spacing:.1em;">STATUS</div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-left:3px solid var(--accent2);border-radius:4px;padding:10px 14px;">
+          <div id="trStatTotal" style="font-size:22px;font-weight:700;color:var(--accent2);font-family:var(--mono);">--</div>
+          <div style="font-size:9px;color:var(--muted);font-family:var(--mono);letter-spacing:.1em;">CONNECTIONS</div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-left:3px solid #1b7f3a;border-radius:4px;padding:10px 14px;">
+          <div id="trStatExternal" style="font-size:22px;font-weight:700;color:#39ff14;font-family:var(--mono);">--</div>
+          <div style="font-size:9px;color:var(--muted);font-family:var(--mono);letter-spacing:.1em;">EXTERNAL</div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-left:3px solid #b00020;border-radius:4px;padding:10px 14px;">
+          <div id="trStatBlacklist" style="font-size:22px;font-weight:700;color:#ff4444;font-family:var(--mono);">--</div>
+          <div style="font-size:9px;color:var(--muted);font-family:var(--mono);letter-spacing:.1em;">BLOCKLIST HITS</div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-left:3px solid var(--warn);border-radius:4px;padding:10px 14px;">
+          <div id="trStatProcs" style="font-size:22px;font-weight:700;color:#e6a817;font-family:var(--mono);">--</div>
+          <div style="font-size:9px;color:var(--muted);font-family:var(--mono);letter-spacing:.1em;">PROCESSES</div>
+        </div>
+      </div>
+      <div id="trStatusHint" style="margin-top:10px;font-size:10px;color:var(--muted);font-family:var(--mono);">Click ▶ START to begin live monitoring.</div>
+    </div>
+
+    <!-- Filters -->
+    <div class="box" style="margin-bottom:14px;padding:12px 16px;">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+        <span style="font-size:10px;color:var(--muted);font-family:var(--mono);letter-spacing:.1em;">FILTER:</span>
+        <input type="text" id="trFilterProc" placeholder="Process..." oninput="trDebouncedLoad()" style="width:140px;background:var(--card);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:3px;font-family:var(--mono);font-size:11px;">
+        <input type="text" id="trFilterSearch" placeholder="Search IP/port..." oninput="trDebouncedLoad()" style="width:180px;background:var(--card);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:3px;font-family:var(--mono);font-size:11px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text);cursor:pointer;font-family:var(--mono);">
+          <input type="checkbox" id="trFilterExternal" checked onchange="trLoadList()" style="accent-color:var(--accent2);">
+          External IPs only
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--danger);cursor:pointer;font-family:var(--mono);">
+          <input type="checkbox" id="trFilterBl" onchange="trLoadList()" style="accent-color:#ff4444;">
+          Blocklist hits only
+        </label>
+        <span style="width:1px;height:18px;background:var(--border);margin:0 4px;"></span>
+        <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--accent2);cursor:pointer;font-family:var(--mono);font-weight:600;">
+          <input type="checkbox" id="trGroupByHost" checked onchange="trLoadList()" style="accent-color:var(--accent2);">
+          Group by host
+        </label>
+        <button class="btnsm" onclick="trResetFilters()" style="padding:5px 12px;font-size:10px;">Reset</button>
+      </div>
+    </div>
+
+    <!-- Connections table -->
+    <div class="box">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div class="btit" style="margin:0;">// Active connections</div>
+        <span id="trCount" style="font-size:11px;color:var(--muted);font-family:var(--mono);">--</span>
+      </div>
+      <div id="trTable" style="overflow:auto;max-height:600px;">
+        <div class="empty" style="padding:24px 0;"><div class="ei">[~]</div><div class="et">Not started yet.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SYSTEM CHECK -->
+  <div class="panel" id="panelSystem">
+    <div class="box">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <div class="btit" style="margin:0">// System-Status &amp; Updates</div>
+        <button class="btnscan" id="btnCheck" onclick="runSysCheck()" style="padding:10px 24px;font-size:12px;">Check status</button>
+      </div>
+
+      <div id="sysResults">
+        <div class="empty"><div class="ei">[sys]</div><div class="et">Click "Check status" to check all components.</div></div>
+      </div>
+
+      <div id="updateSection" style="display:none;margin-top:20px;">
+        <div style="height:1px;background:var(--border);margin-bottom:16px;"></div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <button class="btnscan" id="btnUpdate" onclick="runUpdate()" style="padding:10px 24px;font-size:12px;">Install updates</button>
+          <span style="font-size:11px;color:var(--muted);" id="updateHint"></span>
+        </div>
+        <div id="updateLog" style="display:none;margin-top:14px;background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:14px;font-size:11px;color:var(--accent2);font-family:var(--mono);line-height:1.8;max-height:200px;overflow-y:auto;"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════ SETTINGS DRAWER ═══════ -->
+<div id="settingsBackdrop" onclick="closeSettings()" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);z-index:998;backdrop-filter:blur(3px);"></div>
+<div id="settingsDrawer" style="display:none;position:fixed;top:0;right:0;bottom:0;width:480px;max-width:100vw;background:var(--surface);border-left:1px solid var(--border);box-shadow:-4px 0 28px rgba(0,0,0,.45);z-index:999;overflow-y:auto;">
+  <div style="padding:18px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--card);">
+    <div style="font-size:14px;font-weight:700;letter-spacing:.05em;">⚙ Settings</div>
+    <button class="btnsm" onclick="closeSettings()" style="border-color:var(--muted);color:var(--muted);">Close ✕</button>
+  </div>
+  <div style="padding:14px 0;">
+    <div class="settings-tabs" style="display:flex;border-bottom:1px solid var(--border);margin-bottom:14px;overflow-x:auto;">
+      <button class="set-tab active" data-stab="Scheduler" onclick="setSettingsTab('Scheduler')" style="background:transparent;border:none;color:var(--accent);padding:10px 18px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;cursor:pointer;border-bottom:2px solid var(--accent);">Scheduler</button>
+      <button class="set-tab"        data-stab="Blocklists" onclick="setSettingsTab('Blocklists')" style="background:transparent;border:none;color:var(--muted);padding:10px 18px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;cursor:pointer;border-bottom:2px solid transparent;">Blocklists</button>
+      <button class="set-tab"        data-stab="System"    onclick="setSettingsTab('System')"    style="background:transparent;border:none;color:var(--muted);padding:10px 18px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;cursor:pointer;border-bottom:2px solid transparent;">System check</button>
+      <button class="set-tab"        data-stab="History"   onclick="setSettingsTab('History')"   style="background:transparent;border:none;color:var(--muted);padding:10px 18px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;cursor:pointer;border-bottom:2px solid transparent;">Scan history</button>
+    </div>
+    <div id="settingsContent" style="padding:0 16px 24px;">
+      <div style="color:var(--muted);font-size:11px;text-align:center;padding:30px 0;">⟳ Loading...</div>
+    </div>
+  </div>
+</div>
+
+<script src="/static/i18n.js?v=1.0.0"></script>
+<script>
+let logSeenCount = 0;
+let logLastSeq = -1;
+let logVisible = true;
+let logPollT = null;
+let lastDevCount = 0;
+let lastBatchStatus = '';
+
+function clearLog() {
+  logSeenCount = 0;
+  logLastSeq = -1;
+  const el = document.getElementById('scanLogEntries');
+  if (el) el.innerHTML = '';
+}
+
+function toggleLog() {
+  logVisible = !logVisible;
+  const entries = document.getElementById('scanLogEntries');
+  const btn = document.getElementById('logToggleBtn');
+  if (entries) entries.style.display = logVisible ? 'block' : 'none';
+  if (btn) btn.textContent = logVisible ? '▲ COLLAPSE' : '▼ EXPAND';
+}
+
+function clsColor(cls) {
+  return {found:'#39ff14', cve:'#ff4444', batch:'#888', warn:'#f5a623', info:'#00e5ff'}[cls] || '#00e5ff';
+}
+
+async function fetchLog() {
+  try {
+    const r = await fetch('/api/scan-log?since=0');
+    const d = await r.json();
+    if (d.seq === logLastSeq) return;  // nothing changed
+    logLastSeq = d.seq;
+    const el = document.getElementById('scanLogEntries');
+    if (!el) return;
+    // Full re-render — handles both new entries AND in-place updates
+    const wasBottom = el.scrollHeight - el.scrollTop <= el.clientHeight + 20;
+    el.innerHTML = '';
+    for (const e of (d.events || [])) {
+      const row = document.createElement('div');
+      row.innerHTML = `<span style="color:#556">${e.t}</span>&nbsp;&nbsp;<span style="color:${clsColor(e.cls)}">${e.msg}</span>`;
+      el.appendChild(row);
+    }
+    if (wasBottom) el.scrollTop = el.scrollHeight;
+    logSeenCount = (d.events || []).length;
+    const sl = document.getElementById('scanLog');
+    if (sl) sl.style.display = logSeenCount > 0 ? 'block' : 'none';
+  } catch(e) {}
+}
+
+let allDevs = [], scanT = null, scanStart = null, elapsedTimer = null, showLbls = true, sim = null, zoom = null;
+
+function showTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel'+name).classList.add('active');
+  if (name === 'Map' && allDevs.length > 0) { _lastDevs=allDevs; switchMapMode(); }
+  if (name === 'Hosts') loadHosts();
+  if (name === 'Monitor') { loadAlerts(); loadScheduler(); }
+  if (name === 'History')   { loadHistory(); loadSavedReports(); }
+  if (name === 'Logs')      { loadLogs(); startLogsLive(); } else { stopLogsLive(); }
+  if (name === 'Blocklists') { loadBlacklist(); }
+  if (name === 'Traffic')   { loadTraffic(); startTrafficPoll(); } else { stopTrafficPoll(); }
+  if (name === 'System') { /* auto-check on open */ }
+}
+
+async function init() {
+  try {
+    const r = await fetch('/api/network-info');
+    const d = await r.json();
+    addRange(d.network);
+    const tcpEl = document.getElementById('ianaTcpLabel');
+    const udpEl = document.getElementById('ianaUdpLabel');
+    if (tcpEl && d.iana_tcp_count) tcpEl.textContent = `(All IANA assigned TCP · ${d.iana_tcp_count})`;
+    if (udpEl && d.iana_total_count) udpEl.textContent = `(All IANA assigned TCP + UDP · ${d.iana_total_count})`;
+  } catch {
+    addRange('192.168.1.0/24');
+  }
+
+  try {
+    const r = await fetch('/api/known-devices');
+    const known = await r.json();
+    if (known.length) {
+      allDevs = known;
+      _lastDevs=known; drawMap(known, true);
+    }
+  } catch (e) {}
+
+}
+
+// Refresh alert badge every 30s globally (so user sees unacked alerts without opening Scheduler tab)
+setInterval(() => { try{ loadAlerts(); }catch(e){} }, 30000);
+// Initial fetch shortly after page load
+setTimeout(() => { try{ loadAlerts(); }catch(e){} }, 2000);
+
+function addRange(v='') {
+  const l = document.getElementById('rangesList');
+  const row = document.createElement('div'); row.className = 'rrow';
+  row.innerHTML = '<input type="text" value="'+v+'" placeholder="e.g. 192.168.1.0/24"><button class="btnx" onclick="this.parentElement.remove()">X</button>';
+  l.appendChild(row);
+}
+
+function getRanges() {
+  return [...document.querySelectorAll('.rrow input')].map(i=>i.value.trim()).filter(v=>v);
+}
+
+async function startScan() {
+  const ranges = getRanges();
+  if (!ranges.length) { alert('Enter at least one network range.'); return; }
+  const cve = document.getElementById('cveCheck').checked;
+  document.getElementById('scanBtn').disabled = true;
+  document.getElementById('scanBtn').textContent = 'Scanning...';
+  document.getElementById('scanBtn').classList.add('scanning');
+  const logoEl = document.getElementById('logoWrap');
+  if (logoEl) logoEl.classList.add('logo-scanning');
+  document.getElementById('cancelBtn').style.display = 'inline-block';
+  document.getElementById('progressBox').style.display = 'block';
+  document.getElementById('pmeta').style.display = 'flex';
+  document.getElementById('pbar').style.display = 'block';
+  // statusDot removed
+  scanStart = Date.now();
+  const now = new Date();
+  document.getElementById('pStartTime').textContent = now.toLocaleTimeString('de-DE');
+  elapsedTimer = setInterval(() => {
+    const sec = Math.floor((Date.now() - scanStart) / 1000);
+    const m = String(Math.floor(sec/60)).padStart(2,'0');
+    const s = String(sec%60).padStart(2,'0');
+    document.getElementById('pElapsed').textContent = m+':'+s;
+  }, 1000);
+  try {
+    const nvd = document.getElementById('nvdCheck') ? document.getElementById('nvdCheck').checked : true;
+  const os  = document.getElementById('osCheck')?.checked ?? true;
+  const infra = false;
+  const _raw_mode = document.querySelector('input[name="portMode"]:checked')?.value || 'top1000';
+  const port_mode = _raw_mode;
+  clearLog();
+  lastDevCount = 0;
+  if (logPollT) clearInterval(logPollT);
+  logPollT = setInterval(fetchLog, 800);
+  const _sl = document.getElementById('scanLog'); if(_sl) _sl.style.display='block';
+  await fetch('/api/scan', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ranges,cve,nvd,os,port_mode,infra})});
+  } catch(e) { console.error('startScan error:', e); alert('Error: '+e.message+' — Line: '+(e.stack||'').split('\n')[1]); resetBtn(); return; }
+  scanT = setInterval(poll, 1500);
+}
+
+async function poll() {
+  try {
+    const r = await fetch('/api/status'); const d = await r.json();
+    const pct = d.progress||0;
+    // Keep progress monotonic
+    const prevW = parseFloat(document.getElementById('pfill').style.width)||0;
+    document.getElementById('pfill').style.width = Math.max(prevW, pct)+'%';
+    const _lw = document.getElementById('logoWrap');
+    if (_lw) { if (d.running) _lw.classList.add('logo-scanning'); else _lw.classList.remove('logo-scanning'); }
+    document.getElementById('pstat').textContent = d.status;
+    if (scanStart && pct > 8 && pct < 100) {
+      const elapsed = (Date.now()-scanStart)/1000;
+      const rate = pct / elapsed;
+      if (rate > 0) {
+        const rem = (100-pct) / rate;
+        if (rem < 7200) {
+          const m=Math.floor(rem/60), s=Math.floor(rem%60);
+          document.getElementById('peta').textContent = m>0 ? '~'+m+'m '+s+'s' : '~'+s+'s';
+        }
+      }
+    } else if (pct <= 8) {
+      document.getElementById('peta').textContent = 'calculating...';
+    }
+    if (!d.running) {
+      if (scanT) { clearInterval(scanT); scanT = null; }
+      document.getElementById('peta').textContent = 'Done!';
+      
+      document.getElementById('pfill').style.width = '100%';
+      resetBtn(); // always reset first
+      try { await loadRes(d.last_scan); } catch(e) { console.error('loadRes error:', e); }
+      try { await loadAlerts(); } catch(e) { console.error('loadAlerts error:', e); }
+    }
+  } catch(e) {
+    console.error('poll error:', e);
+    // if poll fails repeatedly, check if we should stop
+    if (scanT && document.getElementById('scanBtn').disabled) {
+      try {
+        const r2 = await fetch('/api/status'); const d2 = await r2.json();
+        if (!d2.running) { clearInterval(scanT); scanT = null; resetBtn(); }
+      } catch(_) {}
+    }
+  }
+}
+
+function resetBtn() {
+  if (scanT) { clearInterval(scanT); scanT = null; }
+  if (elapsedTimer) { clearInterval(elapsedTimer); elapsedTimer = null; }
+  if (logPollT) { clearInterval(logPollT); logPollT=null; fetchLog(); }
+  const btn = document.getElementById('scanBtn');
+  btn.disabled = false;
+  btn.textContent = 'START SCAN';
+  btn.classList.remove('scanning');
+  document.getElementById('cancelBtn').style.display = 'none';
+  const lw=document.getElementById('logoWrap'); if(lw) lw.classList.remove('logo-scanning');
+}
+
+async function loadRes(ls) {
+  const r = await fetch('/api/results'); allDevs = await r.json();
+  renderDevs(allDevs); updateStats(allDevs);
+  const modeNames = {top1000:'STD', iana:'HIGH', iana_udp:'HIGH+', deep:'DEEP'};
+  if (ls) {
+    const modeLabel = modeNames[d.last_mode] || 'STD';
+    document.getElementById('lscan').textContent = 'Last scan: '+ls+' | '+modeLabel;
+  }
+}
+
+function updateStats(devs) {
+  const v = devs.filter(d=>(d.cves&&d.cves.length>0)||(d.cve_details&&d.cve_details.length>0));
+  const p = devs.reduce((a,d)=>a+(d.ports?d.ports.length:0),0);
+  document.getElementById('s0').textContent = devs.length;
+  document.getElementById('s1').textContent = devs.length-v.length;
+  document.getElementById('s2').textContent = v.length;
+  document.getElementById('s3').textContent = p;
+}
+
+function renderDevs(devs) {
+  const g=document.getElementById('devGrid'), r=document.getElementById('resSec'), e=document.getElementById('emptyState');
+  g.innerHTML='';
+  if (!devs.length) { r.style.display='none'; e.style.display='block'; return; }
+  r.style.display='block'; e.style.display='none';
+  let html = '';
+  devs.forEach((d,i)=>{
+    const hc=(d.cves&&d.cves.length>0)||(d.cve_details&&d.cve_details.length>0);
+    const pb=d.ports&&d.ports.length ? '<span class="b bp">'+d.ports.length+' Port'+(d.ports.length>1?'s':'')+'</span>' : '';
+    let worstSev = 'CVE';
+    if (d.cve_details && d.cve_details.length > 0) {
+      const sevOrder = {CRITICAL:0,HIGH:1,MEDIUM:2,LOW:3,UNKNOWN:4};
+      // Bevorzuge bekannte Severities, UNKNOWN nur als Fallback
+      const known = d.cve_details.filter(c=>c.severity&&c.severity!=='UNKNOWN');
+      const pool = known.length > 0 ? known : d.cve_details;
+      const sorted = [...pool].sort((a,b)=>(sevOrder[a.severity]||4)-(sevOrder[b.severity]||4));
+      worstSev = sorted[0].severity || 'CVE';
+    }
+    const cveCount=d.cves&&d.cves.length>0?d.cves.length:d.cve_details&&d.cve_details.length>0?d.cve_details.length:0; const cb=hc&&cveCount>0 ? '<span class="b bc">! '+cveCount+' '+worstSev+'</span>' : '';
+    const pr=(d.ports||[]).map(p=>{
+      const isUdp = p.protocol === "udp";
+      const bs = p.banner_status || "unknown";
+      const bsIcon = bs==="active"   ? '<span title="Service responds with a banner" style="color:#39ff14;font-size:10px;margin-left:6px;">✔ Active</span>'
+                   : bs==="filtered" ? '<span title="Filtered by firewall — access unavailable" style="color:var(--muted);font-size:10px;margin-left:6px;">■ Filtered</span>'
+                   : bs==="open"     ? '<span title="Port open — no banner detected; review required" style="color:var(--warn);font-size:10px;margin-left:6px;">■ Open - review</span>'
+                   : '<span style="color:var(--muted);font-size:10px;margin-left:6px;">? Unknown</span>';
+      const scripts = p.scripts ? Object.entries(p.scripts).filter(([k])=>!k.startsWith("_")).map(([k,v])=>{
+        const icon = k==="smb-vuln-ms17-010"&&v.toLowerCase().includes("vulnerable") ? "🔴"
+                   : k==="ftp-anon"&&v.toLowerCase().includes("allowed") ? "🔴"
+                   : k==="ssl-cert" ? "🔐" : k==="http-title" ? "🌐" : "ℹ️";
+        return '<div style="font-size:10px;color:var(--muted);margin-left:8px;margin-top:2px;">'+icon+' <span style="color:var(--accent2);">'+k+':</span> '+v.slice(0,80)+(v.length>80?"...":"")+'</div>';
+      }).join("") : "";
+      const prodInfo = [p.product, p.extra_info].filter(Boolean).join(' · ');
+      return '<div class="pi">' +
+        '<span class="pn">' + p.port + '/' + (p.protocol||'tcp') + (isUdp ? ' <span style="font-size:9px;color:var(--warn);">UDP</span>' : '') + '</span>' +
+        bsIcon +
+        '<span class="ps">' + (p.service || '—') + '</span>' +
+        '<span class="pp">' + prodInfo + '</span>' +
+        (scripts ? '<div style="grid-column:1/-1;padding:2px 0 1px;">' + scripts + '</div>' : '') +
+        '</div>';
+    }).join("");
+    const details = d.cve_details || [];
+    // Build a complete list: enriched ones first, then any IDs from d.cves that aren't already in details
+    const detailIds = new Set(details.map(c => c.id));
+    const extraIds = (d.cves || []).filter(id => !detailIds.has(id));
+    const cr = hc
+      ? (
+          details.map(cv => {
+              const sev = cv.severity || 'UNKNOWN';
+              const score = cv.score != null ? cv.score.toFixed(1) : '?';
+              const desc = cv.description ? '<div class="cve-desc">'+cv.description.slice(0,120)+(cv.description.length>120?'...':'')+'</div>' : '';
+              // Risk badges
+              let riskBadges = '';
+              if (cv.kev) {
+                const kevDate = cv.kev_date_added ? ' (since '+cv.kev_date_added+')' : '';
+                riskBadges += '<span title="CISA Known Exploited Vulnerability'+kevDate+' — actively exploited, highest priority" style="display:inline-block;padding:1px 7px;background:rgba(176,0,32,.25);border:1px solid #b00020;color:#ff4444;font-weight:700;font-size:9px;border-radius:2px;margin-left:6px;letter-spacing:.05em;">🔥 KEV</span>';
+              }
+              if (cv.epss_score != null && cv.epss_score >= 0.10) {
+                const pct = Math.round(cv.epss_score * 100);
+                const pctile = cv.epss_percentile != null ? Math.round(cv.epss_percentile * 100) : null;
+                const epssColor = cv.epss_score >= 0.5 ? '#ff8800' : cv.epss_score >= 0.2 ? '#e6a817' : 'var(--accent)';
+                const title = 'EPSS: '+pct+'% probability of exploitation within 30 days'+(pctile!=null?' · Top '+(100-pctile)+'% highest-ranked CVEs':'');
+                riskBadges += '<span title="'+title+'" style="display:inline-block;padding:1px 7px;border:1px solid '+epssColor+';color:'+epssColor+';font-weight:600;font-size:9px;border-radius:2px;margin-left:6px;">EPSS '+pct+'%</span>';
+              }
+              if (cv.exploits && cv.exploits.length > 0) {
+                const expLinks = cv.exploits.slice(0,3).map(e =>
+                  '<a href="'+escHtml(e.url)+'" target="_blank" style="color:#ff4444;text-decoration:none;font-size:9px;">'+escHtml(e.label)+'</a>'
+                ).join(', ');
+                riskBadges += '<span title="Public exploits available — prompt patching required" style="display:inline-block;padding:1px 7px;background:rgba(255,68,68,.1);border:1px solid #ff4444;font-weight:600;font-size:9px;border-radius:2px;margin-left:6px;">💥 '+cv.exploits.length+' Exploit'+(cv.exploits.length>1?'s':'')+': '+expLinks+'</span>';
+              }
+              return '<div class="cve-row"><div class="cve-top"><span class="b '+`sev-${sev}`+'">'+sev+'</span><span class="cvss-score" style="color:inherit">'+score+'</span><a class="cid clk" href="https://nvd.nist.gov/vuln/detail/'+cv.id+'" target="_blank" title="Look up in NVD" style="text-decoration:none;">'+cv.id+'</a>'+riskBadges+'</div>'+desc+'</div>';
+            }).join('')
+          + extraIds.map(c=>'<div class="cve-row"><div class="cve-top"><span class="b sev-UNKNOWN">?</span><a class="cid clk" href="https://nvd.nist.gov/vuln/detail/'+c+'" target="_blank" title="Look up in NVD" style="text-decoration:none;">'+c+'</a></div><div class="cve-desc" style="color:var(--muted);font-size:10px;">NVD data unavailable (rate limit or timeout)</div></div>').join('')
+        )
+      : '<span class="nocve">OK - No CVEs</span>';
+    const mac = d.mac && d.mac !== '-'
+      ? `<div style="margin-top:10px;font-size:10px;color:var(--muted)">MAC: <span style="color:var(--accent2)">${d.mac}</span>  ${d.vendor && d.vendor !== 'Unknown' ? '· '+d.vendor : ''}</div>` : '';
+    const firstSeen = d.first_seen
+      ? `<div style="font-size:10px;color:var(--muted);margin-top:4px">First seen: ${d.first_seen}</div>` : '';
+    const prevIps = d.previous_ips && d.previous_ips.length
+      ? `<div style="font-size:10px;color:var(--warn);margin-top:4px">Previous IPs: ${d.previous_ips.join(', ')}</div>` : '';
+    const labelVal = d.label || '';
+    const labelHtml = '<div style="margin-top:10px;display:flex;gap:7px;align-items:center;"><input type="text" value="'+labelVal+'" placeholder="Name device..." style="font-size:11px;padding:5px 9px;width:200px;" onchange="setLabel(\'' + d.ip + '\',this.value)"><span style="font-size:10px;color:var(--muted)">Label</span></div>';
+    const hn=d.hostname&&d.hostname!=='-'?d.hostname:'<span style="color:var(--muted)">--</span>';
+    const os=d.os&&d.os!=='Unknown'?d.os:'--';
+
+    // Infra-Template findings
+    const infraFindings = d.infra_findings || [];
+    const infraTech     = d.infra_tech || [];
+    let infraHtml = '';
+    if (infraFindings.length > 0) {
+      const sevCol = {'KRITISCH':'#ff4444','HIGH':'#ff8800','MEDIUM':'#e6a817','INFO':'var(--accent)'};
+      infraHtml = '<div class="dsec" style="margin-top:12px;"><h4>Infrastructure Security</h4>';
+      if (infraTech.length > 0) {
+        infraHtml += '<div style="margin-bottom:8px;">' + infraTech.map(t=>'<span style="font-size:9px;padding:2px 7px;border:1px solid var(--accent);border-radius:2px;color:var(--accent);font-family:var(--mono);margin-right:4px;">'+t.toUpperCase()+'</span>').join('') + '</div>';
+      }
+      infraFindings.forEach(f=>{
+        const col = sevCol[f.severity]||'var(--muted)';
+        infraHtml += '<div style="padding:6px 10px;margin-bottom:4px;border-left:3px solid '+col+';background:rgba(0,0,0,.2);border-radius:0 3px 3px 0;">';
+        infraHtml += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:3px;">';
+        infraHtml += '<span style="font-size:10px;font-weight:700;color:'+col+';font-family:var(--mono);">'+f.severity+'</span>';
+        infraHtml += '<span style="font-size:10px;color:var(--muted);font-family:var(--mono);">['+f.tech+']</span>';
+        infraHtml += '<span style="font-size:11px;color:var(--text);">'+f.title+'</span></div>';
+        infraHtml += '<div style="font-size:10px;color:var(--muted);margin-bottom:2px;">'+f.detail+'</div>';
+        infraHtml += '<div style="font-size:10px;color:#4caf50;">⚑ '+f.remediation+'</div>';
+        infraHtml += '</div>';
+      });
+      infraHtml += '</div>';
+    }
+
+    html+='<div class="dev'+(hc?' vuln':'')+'"><div class="dhdr" onclick="tog('+i+')"><div class="dip">'+d.ip+'</div><div class="dhn">'+hn+'</div><div class="dven">'+(d.vendor||'--')+'</div><div class="dos">'+os+'</div><div class="dtype">'+(d.device_icon||'')+'<span style="font-size:10px;margin-left:4px;color:var(--muted);font-family:var(--mono);">'+(d.device_label||'')+'</span></div><div class="bgs">'+pb+cb+'</div></div><div class="dbody" id="db'+i+'"><div class="dgrid" style="grid-template-columns:1fr;"><div class="dsec"><h4>Open ports</h4>'+(pr?'<div style="display:grid;grid-template-columns:110px 140px 130px 1fr;gap:4px 10px;padding:6px 12px 7px;border-bottom:1px solid var(--border);background:rgba(0,229,255,.03);border-radius:3px 3px 0 0;"><span style="font-size:9px;color:var(--muted);font-family:var(--mono);">PORT</span><span style="font-size:9px;color:var(--muted);font-family:var(--mono);">STATUS</span><span style="font-size:9px;color:var(--muted);font-family:var(--mono);">SERVICE</span><span style="font-size:9px;color:var(--muted);font-family:var(--mono);">PRODUCT / INFO</span></div>':'')+'<div class="pl">'+(pr||'<span style="font-size:11px;color:var(--muted)">None</span>')+'</div></div><div class="dsec" style="margin-top:12px;"><h4>CVE findings</h4><div class="cl">'+cr+'</div>'+mac+firstSeen+prevIps+'</div>'+(d.ai_recommendation ? '<div class="dsec" style="margin-top:12px;"><h4 style="display:flex;align-items:center;gap:6px;"><span style="font-size:14px;">🤖</span> AI recommendation <span style="font-size:9px;color:var(--muted);font-family:var(--mono);font-weight:400;">(Ollama mistral)</span></h4><div style="background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.15);border-radius:4px;padding:10px 14px;font-size:12px;color:var(--text);line-height:1.7;white-space:pre-wrap;font-family:var(--sans);">'+escHtml(d.ai_recommendation)+'</div></div>' : '')+infraHtml+'</div>'+labelHtml+'</div></div>';
+  });
+  g.innerHTML = html;
+}
+
+function tog(i){ document.getElementById('db'+i).classList.toggle('open'); }
+function filterDevs(q){ q=q.toLowerCase(); renderDevs(allDevs.filter(d=>d.ip.includes(q)||(d.hostname||'').toLowerCase().includes(q)||(d.vendor||'').toLowerCase().includes(q)||(d.os||'').toLowerCase().includes(q)||(d.cves||[]).some(c=>c.toLowerCase().includes(q)))); }
+
+async function dlReport() {
+  const btn=document.getElementById('btnPdf');
+  btn.disabled=true; btn.textContent='Creating PDF...';
+  try {
+    const lang=window.getVulnScanLanguage?getVulnScanLanguage():'en';
+    const r=await fetch('/api/report?lang='+encodeURIComponent(lang));
+    if (!r.ok) { alert('Could not create PDF'); return; }
+    const blob=await r.blob(), url=URL.createObjectURL(blob), a=document.createElement('a');
+    a.href=url; a.download='vulnscan-report-'+lang+'.pdf'; a.click(); URL.revokeObjectURL(url);
+  } catch(e){ alert('Error: '+e.message); }
+  finally { btn.disabled=false; btn.textContent='PDF report'; }
+}
+
+// MAP
+function nodeColor(d){ if(d.gw) return '#00e5ff'; if(d.online === false) return '#7b8a96'; if((d.cves&&d.cves.length)||(d.cve_details&&d.cve_details.length)) return '#ff3b3b'; if(d.ports&&d.ports.length) return '#39ff14'; return '#ff9500'; }
+function nodeLabel(d){ const h=d.hostname&&d.hostname!=='-'?d.hostname.replace('.fritz.box','').replace('.local',''):d.ip; return h.length>16?h.slice(0,14)+'..':h; }
+
+function drawMap(devs, knownOnly=false) {
+  const svg=d3.select('#mapSvg'); svg.selectAll('*').remove();
+  const W=document.getElementById('mapSvg').clientWidth||900, H=560;
+  const onlineCount = devs.filter(d => d.online !== false).length;
+  const offlineCount = devs.filter(d => d.online === false).length;
+  document.getElementById('mapInfo').textContent = knownOnly
+    ? `${devs.length} bekannte Devices — online ${onlineCount}, offline ${offlineCount}`
+    : `${devs.length} Devices — Drag to move, scroll to zoom`;
+  const sorted=[...devs].sort((a,b)=>{ const [,,,pa]=a.ip.split('.').map(Number),[,,,pb]=b.ip.split('.').map(Number); return pa-pb; });
+  const gwNode = sorted.find(d => d.online !== false && (d.ip.endsWith('.1') || /router|gateway|fritz/i.test((d.hostname||'')+' '+(d.vendor||'')+' '+(d.label||'')))) || sorted.find(d => d.ip.endsWith('.1')) || sorted[0];
+  const gwIp=gwNode?.ip;
+  const nodes=devs.map(d=>({...d,id:d.ip,gw:d.ip===gwIp}));
+  const links=nodes.filter(n=>!n.gw).map(n=>({source:gwIp,target:n.id}));
+  const g=svg.append('g');
+  zoom=d3.zoom().scaleExtent([.3,3]).on('zoom',e=>g.attr('transform',e.transform));
+  svg.call(zoom);
+  const defs=svg.append('defs');
+  const fl=defs.append('filter').attr('id','glow');
+  fl.append('feGaussianBlur').attr('stdDeviation','3').attr('result','coloredBlur');
+  const fm=fl.append('feMerge');
+  fm.append('feMergeNode').attr('in','coloredBlur');
+  fm.append('feMergeNode').attr('in','SourceGraphic');
+  sim=d3.forceSimulation(nodes)
+    .force('link',d3.forceLink(links).id(d=>d.id).distance(130))
+    .force('charge',d3.forceManyBody().strength(-300))
+    .force('center',d3.forceCenter(W/2,H/2))
+    .force('collision',d3.forceCollide(40));
+  const link=g.append('g').selectAll('line').data(links).enter().append('line')
+    .attr('stroke','#1a2d44').attr('stroke-width',1.5).attr('stroke-opacity',.6);
+  const node=g.append('g').selectAll('g').data(nodes).enter().append('g')
+    .call(d3.drag()
+      .on('start',(e,d)=>{if(!e.active)sim.alphaTarget(.3).restart();d.fx=d.x;d.fy=d.y;})
+      .on('drag',(e,d)=>{d.fx=e.x;d.fy=e.y;})
+      .on('end',(e,d)=>{if(!e.active)sim.alphaTarget(0);d.fx=null;d.fy=null;}));
+  node.append('circle').attr('r',d=>d.gw?22:14)
+    .attr('fill',d=>nodeColor(d)+'22').attr('stroke',d=>nodeColor(d))
+    .attr('stroke-width',2).attr('stroke-dasharray',d=>d.online===false?'4 3':null)
+    .attr('opacity',d=>d.online===false?0.7:1)
+    .attr('cursor','grab')
+    .attr('filter',d=>d.gw?'url(#glow)':null);
+  node.filter(d=>d.ports&&d.ports.length&&!d.gw && d.online !== false).append('circle')
+    .attr('r',18).attr('fill','none').attr('stroke',d=>nodeColor(d))
+    .attr('stroke-width',.5).attr('stroke-dasharray',d=>d.ports.length*4+' 2').attr('opacity',.35);
+  node.append('text').attr('y',d=>d.gw?32:24).attr('text-anchor','middle')
+    .attr('font-size',9).attr('font-family','IBM Plex Mono,monospace').attr('fill','#4a6680')
+    .attr('pointer-events','none').text(d=>d.ip);
+  node.append('text').attr('class','nlbl').attr('y',d=>d.gw?43:35).attr('text-anchor','middle')
+    .attr('font-size',10).attr('font-family','IBM Plex Mono,monospace').attr('fill',d=>nodeColor(d))
+    .attr('pointer-events','none').text(d=>nodeLabel(d));
+  const tipEl=document.getElementById('tip');
+  node.on('mouseover',(e,d)=>{
+    const ports=d.ports&&d.ports.length?d.ports.map(p=>p.port+'/'+p.service).join(', '):'none';
+    const cves=d.cves&&d.cves.length?'<br><span style="color:var(--danger)">CVEs: '+d.cves.join(', ')+'</span>':'';
+    const status = d.online === false ? '<br><span style="color:#7b8a96">Known offline · zuletzt: '+(d.last_seen||'--')+'</span>' : '<br><span style="color:var(--accent2)">Online</span>';
+    tipEl.innerHTML='<b style="color:var(--accent)">'+d.ip+'</b><br>'+(d.vendor||'Unknown')+status+'<br>Ports: '+ports+cves;
+    tipEl.style.opacity=1;
+  }).on('mousemove',e=>{
+    const rect=document.getElementById('mapSvg').getBoundingClientRect();
+    tipEl.style.left=(e.clientX-rect.left+12)+'px';
+    tipEl.style.top=(e.clientY-rect.top+12)+'px';
+  }).on('mouseout',()=>tipEl.style.opacity=0);
+  sim.on('tick',()=>{
+    link.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+    node.attr('transform',d=>'translate('+d.x+','+d.y+')');
+  });
+}
+
+function resetZ(){ if(zoom) d3.select('#mapSvg').transition().duration(500).call(zoom.transform,d3.zoomIdentity); }
+function togLabels(){ showLbls=!showLbls; d3.selectAll('.nlbl').attr('display',showLbls?null:'none'); }
+
+// ── MAP MODE SWITCHER ─────────────────────────────────────────────
+let _lastDevs = [];
+function switchMapMode() {
+  const mode = document.getElementById('mapMode').value;
+  const svg  = document.getElementById('mapSvg');
+  const arch = document.getElementById('archCheck');
+  const leg  = document.getElementById('mapLeg');
+  if (mode === 'force') {
+    svg.style.display = 'block'; arch.style.display = 'none'; leg.style.display = 'flex';
+    if (_lastDevs.length) drawMap(_lastDevs);
+  } else if (mode === 'vlan') {
+    svg.style.display = 'block'; arch.style.display = 'none'; leg.style.display = 'none';
+    if (_lastDevs.length) drawVlanMap(_lastDevs);
+  } else {
+    svg.style.display = 'none'; arch.style.display = 'block'; leg.style.display = 'none';
+    if (_lastDevs.length) drawArchCheck(_lastDevs);
+  }
+}
+
+// ── LAYER 3 VLAN MAP ──────────────────────────────────────────────
+function drawVlanMap(devs) {
+  const svg = d3.select('#mapSvg');
+  svg.selectAll('*').remove();
+  const W = document.getElementById('mapSvg').clientWidth || 900;
+  const H = 780;
+
+  // segments gruppieren nach /24
+  const segs = {};
+  devs.filter(d => d.online !== false).forEach(d => {
+    const seg = d.ip.split('.').slice(0,3).join('.');
+    if (!segs[seg]) segs[seg] = [];
+    segs[seg].push(d);
+  });
+  const segKeys = Object.keys(segs);
+  const segColors = ['#00e5ff','#39ff14','#ff9500','#a855f7','#f59e0b','#ec4899','#06b6d4'];
+
+  const g = svg.append('g');
+  zoom = d3.zoom().scaleExtent([.2,3]).on('zoom',e=>g.attr('transform',e.transform));
+  svg.call(zoom);
+
+  const padX = 60, padY = 60;
+  const cols = Math.min(segKeys.length, 3);
+  const segW = (W - padX*2) / cols;
+
+  segKeys.forEach((seg, si) => {
+    const col = si % cols;
+    const row = Math.floor(si / cols);
+    const cx  = padX + col * segW + segW/2;
+    const cy  = padY + row * 280 + 60;
+    const color = segColors[si % segColors.length];
+    const hosts = segs[seg];
+
+    // VLAN Box
+    g.append('rect')
+      .attr('x', cx - segW/2 + 10).attr('y', cy - 40)
+      .attr('width', segW - 20).attr('height', Math.min(hosts.length, 8) * 35 + 70)
+      .attr('rx', 6).attr('fill', color+'08')
+      .attr('stroke', color).attr('stroke-width', 1.5).attr('stroke-dasharray','6 3');
+
+    // VLAN Label
+    g.append('text').attr('x', cx).attr('y', cy - 18)
+      .attr('text-anchor','middle').attr('font-size',11)
+      .attr('font-family','IBM Plex Mono,monospace').attr('fill', color)
+      .attr('font-weight','700').text(`${seg}.0/24`);
+
+    // Host count
+    g.append('text').attr('x', cx).attr('y', cy - 5)
+      .attr('text-anchor','middle').attr('font-size',9)
+      .attr('font-family','IBM Plex Mono,monospace').attr('fill','#4a6680')
+      .text(`${hosts.length} Devices`);
+
+    // Hosts als kleine Knoten
+    hosts.slice(0,8).forEach((d, hi) => {
+      const hx = cx - segW/2 + 30 + (hi % 4) * ((segW-40)/4);
+      const hy = cy + 20 + Math.floor(hi/4) * 35;
+      const hcolor = d.cves && d.cves.length ? '#ff3b3b' :
+                     d.device_type === 'firewall' ? '#00e5ff' :
+                     d.device_type === 'router'   ? '#00e5ff' : '#39ff14';
+
+      g.append('circle').attr('cx', hx).attr('cy', hy).attr('r', 10)
+        .attr('fill', hcolor+'22').attr('stroke', hcolor).attr('stroke-width',1.5);
+
+      g.append('text').attr('x', hx).attr('y', hy+1)
+        .attr('text-anchor','middle').attr('dominant-baseline','middle')
+        .attr('font-size',10).text(
+          d.device_type==='firewall'?'🛡':
+          d.device_type==='router'?'📡':
+          d.device_type==='switch'?'🔀':
+          d.device_type==='server'?'🖥':
+          d.device_type==='workstation'?'💻':
+          d.device_type==='printer'?'🖨':
+          d.device_type==='nas'?'💾':
+          d.device_type==='ap'?'📶':
+          d.device_type==='camera'?'📷':
+          d.device_type==='iot'?'📟':'❓'
+        );
+
+      g.append('text').attr('x', hx).attr('y', hy+17)
+        .attr('text-anchor','middle').attr('font-size',7)
+        .attr('font-family','IBM Plex Mono,monospace').attr('fill','#4a6680')
+        .text(d.ip.split('.')[3]);
+    });
+    if (hosts.length > 8) {
+      g.append('text').attr('x', cx).attr('y', cy + 85)
+        .attr('text-anchor','middle').attr('font-size',9)
+        .attr('fill','#4a6680').text(`+${hosts.length-8} more`);
+    }
+  });
+
+  // Verbindungslinien zwischen segmentsn (via Gateway)
+  const gwSegs = segKeys.filter(s => segs[s].some(d =>
+    d.device_type==='router'||d.device_type==='firewall'||d.ip.endsWith('.1')));
+  if (gwSegs.length > 0) {
+    const gwSeg = gwSegs[0];
+    const gwIdx = segKeys.indexOf(gwSeg);
+    const gwCol = gwIdx % cols;
+    const gwRow = Math.floor(gwIdx / cols);
+    const gwCx = padX + gwCol * segW + segW/2;
+    const gwCy = padY + gwRow * 280 + 60;
+    segKeys.filter(s => s !== gwSeg).forEach(s => {
+      const si2 = segKeys.indexOf(s);
+      const col2 = si2 % cols;
+      const row2 = Math.floor(si2 / cols);
+      const cx2 = padX + col2 * segW + segW/2;
+      const cy2 = padY + row2 * 280 + 60;
+      g.append('line')
+        .attr('x1', gwCx).attr('y1', gwCy)
+        .attr('x2', cx2).attr('y2', cy2)
+        .attr('stroke','#1a3a5c').attr('stroke-width',1.5)
+        .attr('stroke-dasharray','8 4').attr('opacity',.5);
+    });
+  }
+
+  document.getElementById('mapInfo').textContent =
+    `${segKeys.length} segments · ${devs.filter(d=>d.online!==false).length} Hosts`;
+}
+
+// ── ARCHITEKTUR-CHECK ─────────────────────────────────────────────
+function drawArchCheck(devs) {
+  const online = devs.filter(d => d.online !== false);
+  const segs = {};
+  online.forEach(d => {
+    const seg = d.ip.split('.').slice(0,3).join('.');
+    if (!segs[seg]) segs[seg] = [];
+    segs[seg].push(d);
+  });
+  const segKeys = Object.keys(segs);
+  const findings = [];
+
+  // NET.1.1.A4 Netztrennung in Zonen (B) MUST
+  if (segKeys.length < 2) {
+    findings.push({id:'NET.1.1.A4',prio:'MUST',sev:'HIGH',icon:'🔴',
+      title:'Network segmentation into zones is missing',
+      detail:'All '+online.length+' Devices in one segment ('+segKeys[0]+'.0/24). Review the separation of the internal network, DMZ and external connections against the applicable BSI requirements.',
+      fix:'Separate internal, DMZ and external zones with firewall controls.'});
+  } else {
+    findings.push({id:'NET.1.1.A4',prio:'MUST',sev:'OK',icon:'✅',
+      title:'Network segmentation detected — '+segKeys.length+' segments',
+      detail:'Segments: '+segKeys.map(s=>s+'.0/24').join(', '),fix:''});
+  }
+
+  // NET.1.1.A5 Client-Server-Segmentierung (B) MUST
+  segKeys.forEach(seg => {
+    const hosts = segs[seg];
+    const hasClient = hosts.some(d=>d.device_type==='workstation'||d.device_type==='mobile');
+    const hasServer = hosts.some(d=>d.device_type==='server'||d.device_type==='dc'||d.device_type==='vm_host');
+    if (hasClient && hasServer) {
+      findings.push({id:'NET.1.1.A5',prio:'MUST',sev:'HIGH',icon:'🔴',
+        title:'Client/server separation is missing ('+seg+'.0/24)',
+        detail:'Clients and servers share a segment. Review separation into different network segments.',
+        fix:'Use a dedicated server VLAN and control access with a firewall.'});
+    }
+  });
+
+  // NET.1.1.A6 Endpoint segmentation (B) MUST
+  segKeys.forEach(seg => {
+    const hosts = segs[seg];
+    const types = [...new Set(hosts.map(d=>d.device_type).filter(Boolean))];
+    if ((types.includes('iot')||types.includes('camera')||types.includes('printer')) &&
+        (types.includes('server')||types.includes('dc'))) {
+      findings.push({id:'NET.1.1.A6',prio:'MUST',sev:'HIGH',icon:'🔴',
+        title:'Mixed security levels ('+seg+'.0/24)',
+        detail:'IoT devices, cameras or printers share a segment with servers. Group endpoints according to their security requirements.',
+        fix:'Place IoT devices, cameras and printers in separate VLANs and apply firewall access rules.'});
+    }
+  });
+
+  // NET.1.1.A8 Firewall (B) MUST
+  const hasFirewall = online.some(d=>d.device_type==='firewall');
+  if (!hasFirewall) {
+    findings.push({id:'NET.1.1.A8',prio:'MUST',sev:'HIGH',icon:'🔴',
+      title:'No firewall detected',
+      detail:'BSI NET.1.1.A8: Review whether internet traffic passes through the required firewall architecture.',
+      fix:'Use a firewall and apply access controls between segments.'});
+  } else {
+    const fws = online.filter(d=>d.device_type==='firewall'||d.device_type==='router');
+    findings.push({id:'NET.1.1.A8',prio:'MUST',sev:'OK',icon:'✅',
+      title:'Firewall/router detected',
+      detail:'Detected: '+fws.map(d=>d.ip+' ('+(d.vendor||d.device_label||'?')+')').join(', '),fix:''});
+  }
+
+  // NET.1.1.A21 Management-Trennung (S) SHOULD
+  const mgmtDevs = online.filter(d=>['switch','router','firewall','ap'].includes(d.device_type));
+  const mgmtSegs = [...new Set(mgmtDevs.map(d=>d.ip.split('.').slice(0,3).join('.')))];
+  const userSegs2 = segKeys.filter(s=>segs[s].some(d=>d.device_type==='workstation'));
+  if (mgmtDevs.length > 0 && mgmtSegs.some(s=>userSegs2.includes(s))) {
+    findings.push({id:'NET.1.1.A21',prio:'SHOULD',sev:'MEDIUM',icon:'🟡',
+      title:'Management devices in a user segment',
+      detail:'Switches or routers share a segment with workstations. Review the need for a separate management network.',
+      fix:'Use a dedicated management VLAN and restrict access to administrators.'});
+  } else if (mgmtDevs.length > 0) {
+    findings.push({id:'NET.1.1.A21',prio:'SHOULD',sev:'OK',icon:'✅',
+      title:'Management devices separated',
+      detail:'Infrastructure in a separate segment: '+mgmtSegs.map(s=>s+'.0/24').join(', '),fix:''});
+  }
+
+  // NET.1.2.A10 SNMP (B) MUST
+  const snmpOpen = online.filter(d=>d.ports&&d.ports.some(p=>String(p.port).split('/')[0]==='161'));
+  if (snmpOpen.length > 0) {
+    findings.push({id:'NET.1.2.A10',prio:'MUST',sev:'HIGH',icon:'🔴',
+      title:'SNMP service exposed; version review required ('+snmpOpen.length+' device(s))',
+      detail:'BSI NET.1.2.A10: Review and disable insecure SNMP versions. Hosts: '+snmpOpen.map(d=>d.ip).join(', '),
+      fix:'Use SNMPv3, change default community strings and restrict access to the management VLAN.'});
+  }
+
+  // NET.2.1.A6 WLAN-Segmentierung (B) MUST
+  const apDevs = online.filter(d=>d.device_type==='ap');
+  if (apDevs.length > 0) {
+    const apInUserSeg = apDevs.some(d=>userSegs2.includes(d.ip.split('.').slice(0,3).join('.')));
+    if (apInUserSeg) {
+      findings.push({id:'NET.2.1.A6',prio:'MUST',sev:'MEDIUM',icon:'🟡',
+        title:'Wireless network shares a LAN segment',
+        detail:'BSI NET.2.1.A6: Review wireless separation between security zones. Access points: '+apDevs.map(d=>d.ip).join(', '),
+        fix:'Use a separate wireless VLAN and isolate guest access.'});
+    } else {
+      findings.push({id:'NET.2.1.A6',prio:'MUST',sev:'OK',icon:'✅',
+        title:'Wireless segment separated',
+        detail:'Access points are in a separate segment.',fix:''});
+    }
+  }
+
+  // NET.3.1.A4 Telnet (B) MUST
+  const telnetOpen = online.filter(d=>d.ports&&d.ports.some(p=>String(p.port).split('/')[0]==='23'));
+  if (telnetOpen.length > 0) {
+    findings.push({id:'NET.3.1.A4',prio:'MUST',sev:'HIGH',icon:'🔴',
+      title:'Telnet exposed — insecure administration',
+      detail:'BSI NET.3.1.A4: Secure administrative access. Telnet exposed on: '+telnetOpen.map(d=>d.ip).join(', '),
+      fix:'Disable Telnet and use SSH.'});
+  }
+
+  // NET.3.2.A2 Firewall-Regelwerk (B) MUST
+  if (hasFirewall) {
+    findings.push({id:'NET.3.2.A2',prio:'MUST',sev:'INFO',icon:'ℹ️',
+      title:'Firewall rules — manual review required',
+      detail:'BSI NET.3.2.A2: Review firewall coverage and rules manually.',
+      fix:'Apply deny by default, document rules and review them regularly.'});
+  }
+
+  const crit = findings.filter(f=>f.sev==='HIGH').length;
+  const med  = findings.filter(f=>f.sev==='MEDIUM').length;
+  const ok   = findings.filter(f=>f.sev==='OK').length;
+  const score = Math.max(0, 100 - crit*20 - med*8);
+  const scoreColor = score>=80?'#39ff14':score>=50?'#ff9500':'#ff3b3b';
+
+  let html = '<div style="margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border);">'
+    +'<div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-bottom:8px;">BSI IT-GRUNDSCHUTZ COMPENDIUM 2023 — NETWORK CHECK</div>'
+    +'<div style="display:flex;align-items:center;gap:24px;">'
+    +'<div style="text-align:center;"><div style="font-size:38px;font-weight:700;color:'+scoreColor+';font-family:var(--mono);">'+score+'</div><div style="font-size:9px;color:var(--muted);font-family:var(--mono);">SCORE /100</div></div>'
+    +'<div style="display:flex;gap:16px;">'
+    +'<div style="text-align:center;"><div style="font-size:22px;color:#ff3b3b;font-weight:700;">'+crit+'</div><div style="font-size:9px;color:var(--muted);font-family:var(--mono);">HIGH</div></div>'
+    +'<div style="text-align:center;"><div style="font-size:22px;color:#ff9500;font-weight:700;">'+med+'</div><div style="font-size:9px;color:var(--muted);font-family:var(--mono);">MEDIUM</div></div>'
+    +'<div style="text-align:center;"><div style="font-size:22px;color:#39ff14;font-weight:700;">'+ok+'</div><div style="font-size:9px;color:var(--muted);font-family:var(--mono);">OK</div></div>'
+    +'</div>'
+    +'<div style="font-size:10px;color:var(--muted);font-family:var(--mono);line-height:1.6;">'+segKeys.length+' segments · '+online.length+' Hosts<br>NET.1.1 · NET.1.2 · NET.2.1 · NET.3.1 · NET.3.2</div>'
+    +'</div></div>';
+
+  const order = {HIGH:0,MEDIUM:1,OK:2,INFO:3};
+  findings.sort((a,b)=>(order[a.sev]||9)-(order[b.sev]||9));
+
+  findings.forEach(f => {
+    const bg = f.sev==='HIGH'?'rgba(255,59,59,.07)':f.sev==='MEDIUM'?'rgba(255,149,0,.07)':f.sev==='OK'?'rgba(57,255,20,.05)':'rgba(0,229,255,.05)';
+    const bc = f.sev==='HIGH'?'rgba(255,59,59,.3)':f.sev==='MEDIUM'?'rgba(255,149,0,.3)':f.sev==='OK'?'rgba(57,255,20,.2)':'rgba(0,229,255,.2)';
+    const pc = f.prio==='MUST'?'#ff3b3b':f.prio==='SHOULD'?'#ff9500':'#4a6680';
+    html += '<div style="background:'+bg+';border:1px solid '+bc+';border-radius:4px;padding:12px 16px;margin-bottom:8px;">'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">'
+      +'<span style="font-size:11px;color:var(--muted);font-family:var(--mono);background:rgba(0,0,0,.3);padding:1px 6px;border-radius:2px;">'+f.id+'</span>'
+      +'<span style="font-size:9px;color:'+pc+';font-family:var(--mono);font-weight:700;">'+f.prio+'</span>'
+      +'<span style="font-size:13px;font-weight:600;color:var(--text);">'+f.icon+' '+f.title+'</span>'
+      +'</div>'
+      +'<div style="font-size:11px;color:var(--muted);margin-bottom:'+(f.fix?'5px':'0')+'">'+f.detail+'</div>'
+      +(f.fix?'<div style="font-size:10px;color:var(--accent2);font-family:var(--mono);">→ '+f.fix+'</div>':'')
+      +'</div>';
+  });
+
+  document.getElementById('archCheck').innerHTML = html;
+  document.getElementById('mapInfo').textContent = 'BSI Grundschutz Check · Score: '+score+'/100 · '+crit+' HIGH · '+med+' MEDIUM · '+ok+' OK';
+}
+
+
+
+
+function escHtml(v) {
+  return String(v || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+
+function sortUrls(urls) {
+  return [...(urls || [])].sort((a, b) => {
+    const pa = pathPriority(a), pb = pathPriority(b);
+    if (pa !== pb) return pa - pb;
+    return String(a || '').localeCompare(String(b || ''));
+  });
+}
+
+function scoreResult(r) {
+  return ((r.flags_found || []).length * 100) + ((r.child_pages || []).reduce((a, c) => a + ((c.flags_found || []).length * 40), 0)) + ((r.child_pages || []).length * 5) + ((r.forms || []).length * 3) + ((r.links || []).length);
+}
+
+function renderUrlRows(urls, maxCount=8, addBtn=true) {
+  const list = sortUrls(urls).slice(0, maxCount);
+  if (!list.length) return '';
+  return `<div class="web-rows">${list.map(u => `
+    <div class="web-row">
+      <div class="web-row-main">
+        <a href="${escHtml(u)}" target="_blank" rel="noopener" class="web-url-link">${escHtml(u)}</a>
+      </div>
+      ${addBtn ? `<div class="web-row-actions"><button class="btnsm" style="padding:4px 6px;font-size:10px;" onclick='quickAddWebTarget(${JSON.stringify(u)}, "url")'>+ Target</button></div>` : ''}
+    </div>`).join('')}</div>`;
+}
+
+let webLogCollapsed = false;
+// --- SYSTEM CHECK ---
+async function runSysCheck() {
+  const btn = document.getElementById('btnCheck');
+  btn.disabled = true; btn.textContent = 'Checking...';
+  document.getElementById('sysResults').innerHTML = '<div style="color:var(--muted);font-size:12px;padding:20px;">Checking IANA, pip, Nmap, and web packages...</div>';
+
+  try {
+    const r = await fetch('/api/syscheck');
+    const data = await r.json();
+    renderSysCheck(data);
+  } catch(e) {
+    document.getElementById('sysResults').innerHTML = '<div style="color:var(--danger);padding:16px;">Error: ' + e.message + '</div>';
+  }
+  btn.disabled = false; btn.textContent = 'Check status';
+}
+
+function renderSysCheck(data) {
+  const keys = Object.keys(data);
+  let hasUpdates = [];
+  let html = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;">';
+
+  for (const key of keys) {
+    const d = data[key];
+    const ok = d.ok;
+    const hasUpdate = d.update_available;
+    if (hasUpdate) hasUpdates.push(key);
+
+    const col  = ok ? 'var(--accent2)' : 'var(--danger)';
+    const icon = ok ? '✓' : '✗';
+    const updateBadge = hasUpdate
+      ? `<span style="font-size:10px;background:rgba(255,149,0,.2);color:var(--warn);border:1px solid rgba(255,149,0,.3);padding:2px 7px;border-radius:3px;margin-left:8px;">Update: ${d.latest}</span>`
+      : (d.latest && ok ? `<span style="font-size:10px;color:var(--muted);margin-left:8px;">up to date</span>` : '');
+
+    // SQLite gets special wider card with DB stats (but not full-width anymore)
+    const isDb = key === 'sqlite';
+
+    // For Python: shorten the executable path to just the filename
+    let displayInfo = d.info || '';
+    if (key === 'python' && displayInfo) {
+      // Extract just the filename from the full path
+      const parts = displayInfo.replace(/\\/g, '/').split('/');
+      displayInfo = parts[parts.length - 1];
+    }
+
+    // For SQLite: reformat "3.45.3  |  44 KB" so KB is on info line, version stays clean
+    let displayCurrent = d.current || '';
+    let extraLine = '';
+    if (isDb && displayCurrent.includes('|')) {
+      const [ver, size] = displayCurrent.split('|').map(s => s.trim());
+      displayCurrent = ver;
+      extraLine = size;
+    }
+
+    html += `
+      <div style="background:var(--card);border:1px solid ${ok?'var(--border)':'var(--danger)'};border-left:3px solid ${col};border-radius:4px;padding:14px 16px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <span style="color:${col};font-size:15px;font-weight:700;">${icon}</span>
+          <span style="font-weight:600;font-size:13px;color:var(--text);">${d.name}</span>
+          ${updateBadge}
+        </div>
+        <div style="font-size:11.5px;color:var(--muted);">
+          <span style="color:${col}">${displayCurrent}${extraLine ? ' | ' + extraLine : ''}</span>
+          ${d.latest && d.latest !== displayCurrent ? '<br><span style=\"font-size:11px;color:var(--warn);margin-top:3px;display:block;\">Remote: '+d.latest+'</span>' : ''}
+          ${displayInfo ? '<br><span style="font-size:11px;opacity:.7;margin-top:3px;display:block;">'+displayInfo+'</span>' : ''}
+          ${d.remote_info ? '<br><span style="font-size:11px;opacity:.7;margin-top:3px;display:block;">'+d.remote_info+'</span>' : ''}
+        </div>
+      </div>`;
+  }
+  html += '</div>';
+
+  document.getElementById('sysResults').innerHTML = html;
+  document.getElementById('updateSection').style.display = 'block';
+
+  if (hasUpdates.length > 0) {
+    document.getElementById('updateHint').textContent = hasUpdates.length + ' Update(s) verfuegbar: ' + hasUpdates.join(', ');
+    document.getElementById('btnUpdate').disabled = false;
+    document.getElementById('btnUpdate').style.borderColor = 'var(--warn)';
+    document.getElementById('btnUpdate').style.color = 'var(--warn)';
+    // Store which packages need update
+    document.getElementById('btnUpdate').dataset.packages = JSON.stringify(hasUpdates);
+  } else {
+    document.getElementById('updateHint').textContent = 'All packages are up to date.';
+    document.getElementById('btnUpdate').disabled = true;
+    document.getElementById('btnUpdate').style.opacity = '0.4';
+  }
+}
+
+async function runUpdate() {
+  const btn = document.getElementById('btnUpdate');
+  const packages = JSON.parse(btn.dataset.packages || '["portlists","flask","reportlab"]');
+  btn.disabled = true; btn.textContent = 'Installiere...';
+  const log = document.getElementById('updateLog');
+  log.style.display = 'block';
+  log.textContent = 'Running pip install --upgrade ' + packages.join(' ') + '...\n';
+
+  try {
+    const r = await fetch('/api/update', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({packages})
+    });
+    const results = await r.json();
+    let out = '';
+    for (const [pkg, res] of Object.entries(results)) {
+      const icon = res.ok ? '[OK]' : '[ERROR]';
+      out += icon + ' ' + pkg + ': ' + res.message + '\n';
+    }
+    log.textContent += out + '\nDone. Restart the app to apply updates.';
+    btn.textContent = 'Fertig — App neu starten!';
+    btn.style.borderColor = 'var(--accent2)';
+    btn.style.color = 'var(--accent2)';
+  } catch(e) {
+    log.textContent += 'Error: ' + e.message;
+    btn.disabled = false; btn.textContent = 'Install updates';
+  }
+}
+
+
+async function clearScan() {
+  if (!confirm('Really delete the last scan?')) return;
+  await fetch('/api/scan/clear', {method:'POST'});
+  allDevs = [];
+  document.getElementById('devGrid').innerHTML = '';
+  document.getElementById('s0').textContent = '0';
+  document.getElementById('s1').textContent = '0';
+  document.getElementById('s2').textContent = '0';
+  document.getElementById('s3').textContent = '0';
+  document.getElementById('pmeta').style.display = 'none';
+}
+
+async function startUdpScan() {
+  const btn = document.getElementById('udpBtn');
+  if (!btn) return;
+  btn.disabled = true;
+  btn.textContent = 'UDP scan running...';
+  try {
+    const r = await fetch('/api/scan/udp', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({})});
+    const d = await r.json();
+    if (d.error) { alert('UDP scan: ' + d.error); }
+    else {
+      // Poll status
+      const t = setInterval(async () => {
+        const s = await fetch('/api/status').then(r=>r.json());
+        if (!s.running) {
+          clearInterval(t);
+          btn.disabled = false;
+          btn.textContent = 'UDP SCAN';
+          alert(s.status || 'UDP scan complete.');
+        }
+      }, 2000);
+    }
+  } catch(e) { alert('Error: ' + e.message); }
+  finally { if (btn.disabled && btn.textContent !== 'UDP scan running...') { btn.disabled = false; btn.textContent = 'UDP SCAN'; } }
+}
+
+async function cancelScan() {
+  await fetch('/api/scan/cancel', {method:'POST'});
+  clearInterval(scanT);
+  document.getElementById('pstat').textContent = 'Cancelled.';
+  document.getElementById('peta').textContent = '';
+  resetBtn();
+}
+
+
+// Port mode info label
+document.querySelectorAll('input[name="portMode"]').forEach(r => {
+  r.addEventListener('change', () => {
+    const labels = {
+      'top1000':  'STD — Nmap Top 1000 TCP + LAN-UDP',
+      'iana':     'HIGH — All IANA assigned TCP',
+      'iana_udp': 'HIGH+ — All IANA assigned TCP + UDP',
+      'deep':     'DEEP — All TCP 1-65535 + UDP top 100',
+    };
+    const key = document.querySelector('input[name="portMode"]:checked')?.value || 'top1000';
+    const info = labels[key] || key;
+    const pstat = document.getElementById('pstat');
+    if (pstat && !scanT) pstat.textContent = info;
+  });
+});
+
+// --- LABELS ---
+async function setLabel(ip, label) {
+  await fetch('/api/labels', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ip, label})});
+}
+
+// --- ALERTS ---
+async function loadAlerts() {
+  const r = await fetch('/api/alerts');
+  const alerts = await r.json();
+  const unacked = alerts.filter(a => !a.acknowledged).length;
+  const badge = document.getElementById('alertBadge');
+  if (unacked > 0) { badge.style.display='inline'; badge.textContent=unacked; }
+  else { badge.style.display='none'; }
+
+  const el = document.getElementById('alertsList');
+  if (!alerts.length) {
+    el.innerHTML = '<div class="empty"><div class="ei">[ok]</div><div class="et">No alerts available.</div></div>';
+    return;
+  }
+  const sevCol = {warning:'var(--warn)', critical:'var(--danger)', info:'var(--accent)'};
+  el.innerHTML = alerts.map(a => {
+    const col = sevCol[a.severity] || 'var(--muted)';
+    const ackBtn = !a.acknowledged ? `<button class="btnsm" onclick="ackAlert('${a.id}')" style="font-size:10px;padding:3px 8px;">ok</button>` : '<span style="font-size:10px;color:var(--muted)">acknowledged</span>';
+    return `<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:3px;margin-bottom:6px;background:var(--card);border:1px solid var(--border);border-left:3px solid ${col};opacity:${a.acknowledged?0.45:1}">
+      <div style="flex:1">
+        <div style="font-size:12px;color:${col};font-weight:600;">${a.type === 'new_device' ? 'New device' : 'CVE found'}</div>
+        <div style="font-size:11px;color:var(--text);margin-top:2px;">${a.message}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px;">${a.time}</div>
+      </div>
+      ${ackBtn}
+    </div>`;
+  }).join('');
+}
+
+async function ackAlert(id) {
+  await fetch('/api/alerts/'+id+'/ack', {method:'POST'});
+  loadAlerts();
+}
+
+async function ackAll() {
+  await fetch('/api/alerts/ack-all', {method:'POST'});
+  loadAlerts();
+}
+
+// --- HOSTS (VLAN / Subnet Gruppierung) ---
+async function loadHosts() {
+  const r = await fetch('/api/known-devices');
+  const hosts = await r.json();
+  const el = document.getElementById('hostsList');
+  if (!hosts.length) {
+    el.innerHTML = '<div class="empty"><div class="ei">[~]</div><div class="et">No scan has been run yet.</div></div>';
+    return;
+  }
+
+  // Gruppierung nach Subnet
+  const subnets = {};
+  for (const h of hosts) {
+    const parts = h.ip.split('.');
+    const subnet = parts.slice(0,3).join('.') + '.0/24';
+    if (!subnets[subnet]) subnets[subnet] = [];
+    subnets[subnet].push(h);
+  }
+
+  const online  = hosts.filter(h => h.online).length;
+  const offline = hosts.filter(h => !h.online).length;
+
+  // Apply filter
+  const q = (document.getElementById('hostsFilter')?.value || '').toLowerCase();
+  const filtered = q ? hosts.filter(h =>
+    h.ip.includes(q) || (h.hostname||'').toLowerCase().includes(q) ||
+    (h.vendor||'').toLowerCase().includes(q) || (h.os||'').toLowerCase().includes(q)
+  ) : hosts;
+
+  document.getElementById('hostsCount') && (document.getElementById('hostsCount').textContent =
+    `${filtered.length} Devices · ${online} online · ${offline} offline`);
+
+  let html = '';
+
+  for (const [subnet, devices] of Object.entries(subnets)) {
+    const subDevs = q ? devices.filter(h =>
+      h.ip.includes(q) || (h.hostname||'').toLowerCase().includes(q) ||
+      (h.vendor||'').toLowerCase().includes(q) || (h.os||'').toLowerCase().includes(q)
+    ) : devices;
+    if (!subDevs.length) continue;
+
+    const subOnline = subDevs.filter(d => d.online).length;
+    const subCves   = subDevs.filter(d => (d.cves?.length > 0)||(d.cve_details?.length > 0)).length;
+    const subnetId  = subnet.replace(/[./]/g,'_');
+    const borderCol = subCves > 0 ? 'var(--danger)' : 'var(--accent)';
+
+    html += `<div style="margin-bottom:16px;border:1px solid var(--border);border-left:3px solid ${borderCol};border-radius:4px;overflow:hidden;">
+      <div onclick="toggleVlan('${subnetId}')" style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px;background:var(--card);cursor:pointer;user-select:none;">
+        <div style="display:flex;align-items:center;gap:14px;">
+          <span style="font-family:var(--mono);font-size:12px;color:var(--accent);font-weight:700;">${subnet}</span>
+          <span style="font-size:10px;color:var(--muted);">${subDevs.length} Hosts · ${subOnline} online</span>
+          ${subCves > 0 ? `<span style="font-size:10px;color:var(--danger);font-weight:600;">!! ${subCves} with CVEs</span>` : ''}
+        </div>
+        <span id="vlan_arrow_${subnetId}" style="color:var(--muted);font-size:10px;">▼</span>
+      </div>
+      <div id="vlan_${subnetId}" style="overflow:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:11px;">
+          <thead>
+            <tr style="background:rgba(0,229,255,.04);">
+              <th style="padding:6px 12px;text-align:left;font-size:9px;font-family:var(--mono);color:var(--muted);font-weight:600;letter-spacing:.08em;border-bottom:1px solid var(--border);">IP</th>
+              <th style="padding:6px 12px;text-align:left;font-size:9px;font-family:var(--mono);color:var(--muted);font-weight:600;letter-spacing:.08em;border-bottom:1px solid var(--border);">TYPE</th>
+              <th style="padding:6px 12px;text-align:left;font-size:9px;font-family:var(--mono);color:var(--muted);font-weight:600;letter-spacing:.08em;border-bottom:1px solid var(--border);">HOSTNAME</th>
+              <th style="padding:6px 12px;text-align:left;font-size:9px;font-family:var(--mono);color:var(--muted);font-weight:600;letter-spacing:.08em;border-bottom:1px solid var(--border);">VENDOR</th>
+              <th style="padding:6px 12px;text-align:left;font-size:9px;font-family:var(--mono);color:var(--muted);font-weight:600;letter-spacing:.08em;border-bottom:1px solid var(--border);">OS</th>
+              <th style="padding:6px 12px;text-align:center;font-size:9px;font-family:var(--mono);color:var(--muted);font-weight:600;letter-spacing:.08em;border-bottom:1px solid var(--border);">PORTS</th>
+              <th style="padding:6px 12px;text-align:center;font-size:9px;font-family:var(--mono);color:var(--muted);font-weight:600;letter-spacing:.08em;border-bottom:1px solid var(--border);">CVEs</th>
+              <th style="padding:6px 12px;text-align:center;font-size:9px;font-family:var(--mono);color:var(--muted);font-weight:600;letter-spacing:.08em;border-bottom:1px solid var(--border);">STATUS</th>
+              <th style="padding:6px 12px;text-align:left;font-size:9px;font-family:var(--mono);color:var(--muted);font-weight:600;letter-spacing:.08em;border-bottom:1px solid var(--border);">LAST SEEN</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${subDevs.map((h, idx) => {
+              const ipCol    = (h.cves?.length > 0)||(h.cve_details?.length > 0) ? 'var(--danger)' : (h.online ? 'var(--accent)' : 'var(--muted)');
+              const rowBg    = idx % 2 === 0 ? 'transparent' : 'rgba(0,229,255,.02)';
+              const opacity  = h.online ? '1' : '0.45';
+              const ports    = h.ports?.length || 0;
+              const cves     = new Set([...(h.cves || []), ...(h.cve_details || []).map(c => c.id)]).size;
+              const statusDot = h.online
+                ? '<span style="color:var(--accent2);font-size:10px;">● online</span>'
+                : '<span style="color:var(--muted);font-size:10px;">○ offline</span>';
+              const portMode = h.port_mode || '';
+              return `<tr style="background:${rowBg};opacity:${opacity};border-bottom:1px solid rgba(0,229,255,.04);" onmouseover="this.style.background='rgba(0,229,255,.05)'" onmouseout="this.style.background='${rowBg}'">
+                <td style="padding:7px 12px;font-family:var(--mono);font-weight:700;color:${ipCol};">${h.ip}</td>
+                <td style="padding:7px 12px;font-size:13px;" title="${h.device_label||''}">${h.device_icon||''}<span style="font-size:9px;color:var(--muted);margin-left:3px;">${h.device_label||''}</span></td>
+                <td style="padding:7px 12px;color:var(--text);">${h.hostname && h.hostname !== '-' ? h.hostname : '<span style="color:var(--muted)">—</span>'}</td>
+                <td style="padding:7px 12px;color:var(--muted);">${h.vendor || '—'}</td>
+                <td style="padding:7px 12px;color:var(--muted);">${h.os || '—'}</td>
+                <td style="padding:7px 12px;text-align:center;color:${ports>0?'var(--accent2)':'var(--muted)'};">${ports > 0 ? ports : '—'}</td>
+                <td style="padding:7px 12px;text-align:center;">${cves > 0 ? `<span style="color:var(--danger);font-weight:700;">${cves}</span>` : '<span style="color:var(--muted)">—</span>'}</td>
+                <td style="padding:7px 12px;text-align:center;">${statusDot}</td>
+                <td style="padding:7px 12px;color:var(--muted);font-size:10px;">${h.last_seen || h.first_seen || '—'}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  }
+
+  el.innerHTML = html || '<div class="empty"><div class="et">No devices found.</div></div>';
+}
+
+function toggleVlan(id) {
+  const panel = document.getElementById('vlan_' + id);
+  const arrow = document.getElementById('vlan_arrow_' + id);
+  if (!panel) return;
+  const collapsed = panel.style.display === 'none';
+  panel.style.display = collapsed ? 'block' : 'none';
+  if (arrow) arrow.textContent = collapsed ? '▼' : '▶';
+}
+
+function renderHostsTable() { loadHosts(); }
+
+
+// --- HISTORY ---
+async function loadHistory() {
+  const r = await fetch('/api/history');
+  const history = await r.json();
+  const el = document.getElementById('historyList');
+  if (!history.length) {
+    el.innerHTML = '<div class="empty"><div class="ei">[~]</div><div class="et">No scan has been run yet.</div></div>';
+    return;
+  }
+  // Build rows with diff vs previous scan
+  let rows = '';
+  for (let i = 0; i < history.length; i++) {
+    const h = history[i];
+    const prev = history[i+1];
+    const curIPs  = new Set(h.devices.map(d => d.ip));
+    const prevIPs = prev ? new Set(prev.devices.map(d => d.ip)) : null;
+    const newHosts  = prev ? h.devices.filter(d => !prevIPs.has(d.ip)) : [];
+    const goneHosts = prev ? prev.devices.filter(d => !curIPs.has(d.ip)) : [];
+    const diffHtml = [
+      ...newHosts.map(d  => `<span style="color:#39ff14;margin-right:10px;">+${d.ip}${d.hostname?'&nbsp;('+d.hostname+')':''}</span>`),
+      ...goneHosts.map(d => `<span style="color:var(--danger);margin-right:10px;">−${d.ip}${d.hostname?'&nbsp;('+d.hostname+')':''}</span>`)
+    ].join('');
+    const diffBadge = newHosts.length || goneHosts.length
+      ? `<span style="font-size:10px;margin-left:8px;color:var(--warn);">▲${newHosts.length} ▼${goneHosts.length}</span>`
+      : '';
+    rows += `
+      <tr style="background:${i%2===0?'var(--surface)':'var(--card)'};cursor:pointer;" onclick="toggleHistory(${i})">
+        <td style="padding:8px;color:var(--accent);font-family:monospace;">${h.time}${diffBadge}</td>
+        <td style="padding:8px;text-align:center;"><span style="font-size:10px;font-family:var(--mono);padding:2px 8px;border-radius:3px;background:rgba(0,229,255,.1);color:var(--accent);">${h.port_mode || 'STD'}</span></td>
+        <td style="padding:8px;text-align:center;color:var(--text);">${h.device_count}</td>
+        <td style="padding:8px;text-align:center;color:${h.vuln_count>0?'var(--danger)':'var(--accent2)'};">${h.vuln_count}</td>
+        <td style="padding:8px;text-align:center;color:var(--warn);">${h.port_count}</td>
+      </tr>
+      <tr id="hdetail${i}" style="display:none;background:var(--card);">
+        <td colspan="5" style="padding:10px 16px;">
+          <div style="margin-bottom:6px;font-size:10px;color:var(--muted);letter-spacing:.08em;">HOSTS:</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:${diffHtml?'10px':'0'};">
+            ${h.devices.map(d => `
+              <span style="font-size:10px;font-family:monospace;padding:2px 7px;border-radius:3px;
+                background:var(--surface);border:1px solid var(--border);
+                color:${d.cve_count>0?'var(--danger)':'var(--text)'};">
+                ${d.ip}${d.hostname?'&nbsp;<span style="color:var(--muted)">'+d.hostname+'</span>':''}
+                ${d.cve_count>0?'<span style="color:var(--danger);margin-left:4px;">'+d.cve_count+'CVE</span>':''}
+                ${d.port_count>0?'<span style="color:var(--accent2);margin-left:4px;">'+d.port_count+'P</span>':''}
+              </span>`).join('')}
+          </div>
+          ${diffHtml ? `<div style="margin-top:8px;font-size:10px;color:var(--muted);letter-spacing:.08em;">AENDERUNGEN:</div><div style="margin-top:4px;">${diffHtml}</div>` : ''}
+        </td>
+      </tr>`;
+  }
+  el.innerHTML = `
+    <table style="width:100%;border-collapse:collapse;font-size:11px;">
+      <thead>
+        <tr style="color:var(--muted);font-size:10px;letter-spacing:.1em;text-transform:uppercase;">
+          <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);">Time</th>
+          <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);">Profile</th>
+          <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);">Devices</th>
+          <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);">With CVEs</th>
+          <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);">Open ports</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function toggleHistory(i) {
+  const el = document.getElementById('hdetail'+i);
+  el.style.display = el.style.display === 'none' ? 'table-row' : 'none';
+}
+
+// --- SCHEDULER ---
+function updateSchedUI() {
+  const mode = document.querySelector('input[name="schedMode"]:checked')?.value || 'interval';
+  document.getElementById('schedIntervalRow').style.display = mode === 'interval' ? 'flex' : 'none';
+  document.getElementById('schedTimeRow').style.display     = mode !== 'interval' ? 'flex' : 'none';
+  document.getElementById('schedWeekdayRow').style.display  = mode === 'weekly'   ? 'flex' : 'none';
+}
+
+async function loadScheduler() {
+  const r = await fetch('/api/scheduler');
+  const cfg = await r.json();
+  document.getElementById('schedEnabled').checked = cfg.enabled || false;
+  document.getElementById('schedInterval').value  = cfg.interval_minutes || 60;
+  if (cfg.port_mode) document.getElementById('schedPortMode').value = cfg.port_mode;
+  const mode = cfg.sched_mode || 'interval';
+  const radio = document.querySelector(`input[name="schedMode"][value="${mode}"]`);
+  if (radio) { radio.checked = true; }
+  if (cfg.sched_time) document.getElementById('schedTime').value = cfg.sched_time;
+  if (cfg.sched_weekdays) {
+    document.querySelectorAll('.schedWd').forEach(cb => {
+      cb.checked = cfg.sched_weekdays.includes(parseInt(cb.value));
+    });
+  }
+  updateSchedUI();
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let status = 'Deaktiviert';
+  if (cfg.enabled) {
+    if (mode === 'interval') status = `Enabled — every ${cfg.interval_minutes} Min. · Last scan: ${cfg.last_run || 'never'}`;
+    else if (mode === 'daily') status = `Enabled — daily at ${cfg.sched_time || '02:00'} · Last scan: ${cfg.last_run || 'never'}`;
+    else {
+      const dayNames = (cfg.sched_weekdays||[]).map(d=>days[d]).join(', ');
+      status = `Enabled — ${dayNames} at ${cfg.sched_time || '02:00'} · Last scan: ${cfg.last_run || 'never'}`;
+    }
+  }
+  document.getElementById('schedStatus').textContent = status;
+}
+
+async function saveScheduler() {
+  const enabled   = document.getElementById('schedEnabled').checked;
+  const interval  = parseInt(document.getElementById('schedInterval').value) || 60;
+  const portMode  = document.getElementById('schedPortMode').value;
+  const schedMode = document.querySelector('input[name="schedMode"]:checked')?.value || 'interval';
+  const schedTime = document.getElementById('schedTime')?.value || '02:00';
+  const weekdays  = [...document.querySelectorAll('.schedWd:checked')].map(cb => parseInt(cb.value));
+  const ranges    = getRanges();
+  await fetch('/api/scheduler', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({enabled, interval_minutes: interval, port_mode: portMode,
+                          sched_mode: schedMode, sched_time: schedTime,
+                          sched_weekdays: weekdays, ranges})});
+  await loadScheduler();
+  const modeLabel = schedMode === 'interval' ? `every ${interval} min`
+                  : schedMode === 'daily'    ? `daily at ${schedTime}`
+                  : `weekly at ${schedTime}`;
+  alert(enabled ? `Scheduler enabled: ${modeLabel} (${portMode}).` : 'Scheduler disabled.');
+}
+
+
+
+init();
+// ── GESPEICHERTE REPORTS ──────────────────────────────────────────────
+function saveMaxReports(val) {
+  const n = Math.max(1, Math.min(20, parseInt(val) || 3));
+  document.getElementById('maxReportsInput').value = n;
+  localStorage.setItem('vulnscan_max_reports', n);
+  fetch('/api/reports/max', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({max: n})
+  });
+}
+
+async function loadSavedReports() {
+  // Gespeicherten Max-Wert wiederherstellen
+  const savedMax = parseInt(localStorage.getItem('vulnscan_max_reports')) || 3;
+  const inp = document.getElementById('maxReportsInput');
+  if (inp) inp.value = savedMax;
+
+  const el = document.getElementById('savedReportsList');
+  if (!el) return;
+  try {
+    const r = await fetch('/api/reports');
+    const reports = await r.json();
+    if (!reports.length) {
+      el.innerHTML = '<div class="empty" style="padding:12px 0;"><div class="et">No reports saved yet.</div></div>';
+      return;
+    }
+    el.innerHTML = reports.map(rep => `
+      <div style="display:flex;align-items:center;justify-content:space-between;
+                  padding:8px 12px;margin-bottom:4px;background:var(--card);
+                  border:1px solid var(--border);border-radius:3px;">
+        <div style="display:flex;align-items:center;gap:14px;">
+          <span style="font-size:10px;color:var(--muted);font-family:var(--mono);">#${rep.id}</span>
+          <span style="font-size:12px;color:var(--text);">${rep.label}</span>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <a href="/api/reports/${rep.id}" download style="text-decoration:none;">
+            <button class="btnsm" style="border-color:var(--accent2);color:var(--accent2);">↓ Download</button>
+          </a>
+          <button class="btnsm" onclick="deleteReport(${rep.id})"
+                  style="border-color:var(--danger);color:var(--danger);">✕</button>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    el.innerHTML = '<div style="font-size:11px;color:var(--muted);">Could not load.</div>';
+  }
+}
+
+async function deleteReport(id) {
+  if (!confirm('Delete report?')) return;
+  await fetch('/api/reports/'+id, {method:'DELETE'});
+  loadSavedReports();
+}
+
+// ══════════════════════════════════════════════════════════════
+// LOGS TAB — central event viewer with filters & exports
+// ══════════════════════════════════════════════════════════════
+let logsLiveTimer = null;
+let logsDebounceT = null;
+let logsLastId    = 0;
+
+function debouncedLoadLogs() {
+  if (logsDebounceT) clearTimeout(logsDebounceT);
+  logsDebounceT = setTimeout(loadLogs, 300);
+}
+
+function getLogFilterParams() {
+  const p = new URLSearchParams();
+  const sev   = document.getElementById('logFilterSev').value;
+  const src   = document.getElementById('logFilterSrc').value;
+  const host  = document.getElementById('logFilterHost').value.trim();
+  const q     = document.getElementById('logFilterSearch').value.trim();
+  const from_ = document.getElementById('logFilterFrom').value;
+  const to_   = document.getElementById('logFilterTo').value;
+  const limit = document.getElementById('logFilterLimit').value || '200';
+  if (sev)   p.set('severity', sev);
+  if (src)   p.set('source', src);
+  if (host)  p.set('host', host);
+  if (q)     p.set('search', q);
+  if (from_) p.set('from', from_.replace('T',' '));
+  if (to_)   p.set('to',   to_.replace('T',' '));
+  p.set('limit', limit);
+  return p;
+}
+
+function resetLogFilters() {
+  document.getElementById('logFilterSev').value    = '';
+  document.getElementById('logFilterSrc').value    = '';
+  document.getElementById('logFilterHost').value   = '';
+  document.getElementById('logFilterSearch').value = '';
+  document.getElementById('logFilterFrom').value   = '';
+  document.getElementById('logFilterTo').value     = '';
+  document.getElementById('logFilterLimit').value  = '200';
+  loadLogs();
+}
+
+async function loadLogs() {
+  const params = getLogFilterParams();
+  try {
+    const [listR, statsR] = await Promise.all([
+      fetch('/api/logs?' + params.toString()),
+      fetch('/api/logs/stats?' + params.toString()),
+    ]);
+    const data  = await listR.json();
+    const stats = await statsR.json();
+    renderLogsStats(stats);
+    renderLogsTable(data);
+  } catch(e) {
+    console.error('loadLogs error:', e);
+    const el = document.getElementById('logsTable');
+    if (el) el.innerHTML = '<div class="empty" style="padding:20px 0;"><div class="et" style="color:var(--danger)">Could not load: '+escHtml(e.message)+'</div></div>';
+  }
+}
+
+function renderLogsStats(s) {
+  const sev = s.severity || {};
+  document.getElementById('lsTotal').textContent    = s.total || 0;
+  document.getElementById('lsCritical').textContent = sev.critical || 0;
+  document.getElementById('lsError').textContent    = sev.error    || 0;
+  document.getElementById('lsWarn').textContent     = sev.warn     || 0;
+  document.getElementById('lsInfo').textContent     = sev.info     || 0;
+}
+
+function renderLogsTable(data) {
+  const events = data.events || [];
+  const el = document.getElementById('logsTable');
+  const countEl = document.getElementById('logsCount');
+  if (countEl) {
+    countEl.textContent = events.length + ' of ' + (data.total || 0) + ' Events';
+  }
+  if (!events.length) {
+    el.innerHTML = '<div class="empty" style="padding:24px 0;"><div class="ei">[~]</div><div class="et">No matching events.</div></div>';
+    return;
+  }
+  logsLastId = events[0].id || 0;
+  const sevStyle = {
+    critical: {bg:'rgba(176,0,32,.08)',  bd:'#b00020', tc:'#ff4444', label:'CRITICAL'},
+    error:    {bg:'rgba(217,72,15,.08)', bd:'#d9480f', tc:'#ff8a4a', label:'ERROR'   },
+    warn:     {bg:'rgba(201,138,0,.06)', bd:'#c98a00', tc:'#e6a817', label:'WARN'    },
+    info:     {bg:'transparent',         bd:'#1b7f3a', tc:'#39ff14', label:'INFO'    },
+  };
+  const rows = events.map((e, idx) => {
+    const s = sevStyle[e.severity] || sevStyle.info;
+    const bg = idx % 2 === 0 ? s.bg : (s.bg === 'transparent' ? 'rgba(0,229,255,.02)' : s.bg);
+    const ts = (e.ts || '').replace('T', ' ').slice(0, 19);
+    const host = e.host
+      ? '<span style="font-family:var(--mono);color:var(--accent2);font-size:10px;">'+escHtml(e.host)+'</span>'
+      : '<span style="color:var(--muted);font-size:10px;">—</span>';
+    const evtype = e.event_type
+      ? '<span style="font-family:var(--mono);color:var(--muted);font-size:10px;">'+escHtml(e.event_type)+'</span>'
+      : '<span style="color:var(--muted);font-size:10px;">—</span>';
+    return '<tr style="background:'+bg+';border-bottom:1px solid rgba(0,229,255,.04);">'
+      + '<td style="padding:7px 10px;font-family:var(--mono);color:var(--muted);font-size:10px;white-space:nowrap;">'+escHtml(ts)+'</td>'
+      + '<td style="padding:7px 10px;"><span style="display:inline-block;padding:1px 7px;border:1px solid '+s.bd+';color:'+s.tc+';font-family:var(--mono);font-size:9px;font-weight:700;border-radius:2px;letter-spacing:.05em;">'+s.label+'</span></td>'
+      + '<td style="padding:7px 10px;font-family:var(--mono);color:var(--accent);font-size:10px;">'+escHtml(e.source||'')+'</td>'
+      + '<td style="padding:7px 10px;">'+host+'</td>'
+      + '<td style="padding:7px 10px;">'+evtype+'</td>'
+      + '<td style="padding:7px 10px;color:var(--text);font-size:11px;line-height:1.4;">'+escHtml(e.message||'')+'</td>'
+      + '</tr>';
+  }).join('');
+  el.innerHTML =
+    '<table style="width:100%;border-collapse:collapse;font-size:11px;">'
+    + '<thead><tr style="background:rgba(0,229,255,.06);position:sticky;top:0;z-index:1;">'
+    +   '<th style="padding:8px 10px;text-align:left;font-size:9px;font-family:var(--mono);color:var(--muted);font-weight:600;letter-spacing:.1em;border-bottom:1px solid var(--border);">TIME</th>'
+    +   '<th style="padding:8px 10px;text-align:left;font-size:9px;font-family:var(--mono);color:var(--muted);font-weight:600;letter-spacing:.1em;border-bottom:1px solid var(--border);">SEV</th>'
+    +   '<th style="padding:8px 10px;text-align:left;font-size:9px;font-family:var(--mono);color:var(--muted);font-weight:600;letter-spacing:.1em;border-bottom:1px solid var(--border);">SOURCE</th>'
+    +   '<th style="padding:8px 10px;text-align:left;font-size:9px;font-family:var(--mono);color:var(--muted);font-weight:600;letter-spacing:.1em;border-bottom:1px solid var(--border);">HOST</th>'
+    +   '<th style="padding:8px 10px;text-align:left;font-size:9px;font-family:var(--mono);color:var(--muted);font-weight:600;letter-spacing:.1em;border-bottom:1px solid var(--border);">TYPE</th>'
+    +   '<th style="padding:8px 10px;text-align:left;font-size:9px;font-family:var(--mono);color:var(--muted);font-weight:600;letter-spacing:.1em;border-bottom:1px solid var(--border);">MESSAGE</th>'
+    + '</tr></thead><tbody>' + rows + '</tbody></table>';
+}
+
+function exportLogs(format) {
+  const params = getLogFilterParams();
+  // limit is handled server-side; for export we strip it so user gets everything matching filters
+  params.delete('limit');
+  const url = '/api/logs/export/' + format + '?' + params.toString();
+  window.open(url, '_blank');
+}
+
+async function clearLogs(useFilter) {
+  const filtered = !!useFilter;
+  const params = useFilter ? getLogFilterParams() : new URLSearchParams();
+  params.delete('limit');
+  const msg = filtered
+    ? 'Delete all FILTERED log entries?'
+    : 'Delete ALL log entries? This cannot be undone.';
+  if (!confirm(msg)) return;
+  try {
+    const r = await fetch('/api/logs?' + params.toString(), {method:'DELETE'});
+    const d = await r.json();
+    alert((d.deleted || 0) + ' Entries deleted.');
+    loadLogs();
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+function toggleLogsLive() {
+  const on = document.getElementById('logsLiveTail').checked;
+  if (on) startLogsLive(); else stopLogsLive();
+}
+
+function startLogsLive() {
+  stopLogsLive();
+  const cb = document.getElementById('logsLiveTail');
+  if (!cb || !cb.checked) return;
+  logsLiveTimer = setInterval(() => {
+    // only refresh if we're actually still on the Logs tab
+    const tab = document.getElementById('tabLogs');
+    if (tab && tab.classList.contains('active')) loadLogs();
+    else stopLogsLive();
+  }, 4000);
+}
+
+function stopLogsLive() {
+  if (logsLiveTimer) { clearInterval(logsLiveTimer); logsLiveTimer = null; }
+}
+
+// ══════════════════════════════════════════════════════════════
+// BLACKLIST TAB
+// ══════════════════════════════════════════════════════════════
+async function loadBlacklist() {
+  await Promise.all([blLoadStats(), blLoadFeeds(), blLoadCustom()]);
+}
+
+async function blLoadStats() {
+  try {
+    const r = await fetch('/api/blacklist/stats');
+    const s = await r.json();
+    document.getElementById('blsTotal').textContent  = s.entries_enabled || 0;
+    document.getElementById('blsFeeds').textContent  = s.feeds_enabled   || 0;
+    document.getElementById('blsCustom').textContent = s.entries_custom  || 0;
+    document.getElementById('blsAll').textContent    = s.entries_total   || 0;
+  } catch(e) { console.error(e); }
+}
+
+async function blLoadFeeds() {
+  const el = document.getElementById('blFeedsList');
+  try {
+    const r = await fetch('/api/blacklist/feeds');
+    const feeds = await r.json();
+    if (!feeds.length) {
+      el.innerHTML = '<div class="empty" style="padding:12px 0;"><div class="et">No feeds configured.</div></div>';
+      return;
+    }
+    const rows = feeds.map(f => {
+      const lastUpd = f.last_updated ? f.last_updated.replace('T',' ').slice(0,19) : '<span style="color:var(--muted)">never</span>';
+      const err = f.last_error ? `<div style="font-size:10px;color:var(--danger);margin-top:2px;" title="${escHtml(f.last_error)}">⚠ ${escHtml(f.last_error).slice(0,80)}</div>` : '';
+      const tag = f.is_custom
+        ? '<span style="font-size:9px;padding:1px 6px;border:1px solid var(--warn);color:var(--warn);font-family:var(--mono);border-radius:2px;">CUSTOM</span>'
+        : '<span style="font-size:9px;padding:1px 6px;border:1px solid var(--accent);color:var(--accent);font-family:var(--mono);border-radius:2px;">DEFAULT</span>';
+      const delBtn = f.is_custom
+        ? `<button class="btnsm" onclick="blDeleteFeed(${f.id},'${escHtml(f.name)}')" style="border-color:var(--danger);color:var(--danger);padding:3px 8px;font-size:10px;">✕</button>`
+        : `<button class="btnsm" onclick="blDeleteFeed(${f.id},'${escHtml(f.name)}')" style="border-color:var(--muted);color:var(--muted);padding:3px 8px;font-size:10px;" title="Default feeds can only be reset, not deleted">Reset</button>`;
+      return `<tr style="border-bottom:1px solid rgba(0,229,255,.04);">
+        <td style="padding:9px 10px;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" ${f.enabled?'checked':''} onchange="blToggleFeed(${f.id}, this.checked)" style="accent-color:var(--accent2);">
+            <span style="color:${f.enabled?'var(--accent2)':'var(--muted)'};font-size:10px;font-family:var(--mono);">${f.enabled?'ACTIVE':'OFF'}</span>
+          </label>
+        </td>
+        <td style="padding:9px 10px;">
+          <div style="display:flex;align-items:center;gap:8px;">${tag}<span style="color:var(--text);font-size:12px;font-weight:600;">${escHtml(f.name)}</span></div>
+          <div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:2px;word-break:break-all;">${escHtml(f.url)}</div>
+          ${err}
+        </td>
+        <td style="padding:9px 10px;text-align:center;color:${f.entry_count>0?'var(--accent2)':'var(--muted)'};font-family:var(--mono);font-size:12px;">${f.entry_count||0}</td>
+        <td style="padding:9px 10px;font-size:10px;color:var(--muted);font-family:var(--mono);">${lastUpd}</td>
+        <td style="padding:9px 10px;font-family:var(--mono);font-size:10px;color:var(--muted);">${escHtml(f.format||'')}</td>
+        <td style="padding:9px 10px;text-align:right;">
+          <button class="btnsm" onclick="blUpdateFeed(${f.id})" style="border-color:var(--accent2);color:var(--accent2);padding:3px 10px;font-size:10px;margin-right:4px;">⟳ Update</button>
+          ${delBtn}
+        </td>
+      </tr>`;
+    }).join('');
+    el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:11px;">
+      <thead><tr style="background:rgba(0,229,255,.04);">
+        <th style="padding:8px 10px;text-align:left;font-size:9px;font-family:var(--mono);color:var(--muted);font-weight:600;letter-spacing:.1em;border-bottom:1px solid var(--border);">STATUS</th>
+        <th style="padding:8px 10px;text-align:left;font-size:9px;font-family:var(--mono);color:var(--muted);font-weight:600;letter-spacing:.1em;border-bottom:1px solid var(--border);">FEED</th>
+        <th style="padding:8px 10px;text-align:center;font-size:9px;font-family:var(--mono);color:var(--muted);font-weight:600;letter-spacing:.1em;border-bottom:1px solid var(--border);">ENTRIES</th>
+        <th style="padding:8px 10px;text-align:left;font-size:9px;font-family:var(--mono);color:var(--muted);font-weight:600;letter-spacing:.1em;border-bottom:1px solid var(--border);">LAST UPDATE</th>
+        <th style="padding:8px 10px;text-align:left;font-size:9px;font-family:var(--mono);color:var(--muted);font-weight:600;letter-spacing:.1em;border-bottom:1px solid var(--border);">FORMAT</th>
+        <th style="padding:8px 10px;text-align:right;font-size:9px;font-family:var(--mono);color:var(--muted);font-weight:600;letter-spacing:.1em;border-bottom:1px solid var(--border);">ACTION</th>
+      </tr></thead><tbody>${rows}</tbody></table>`;
+  } catch(e) {
+    el.innerHTML = '<div class="empty" style="padding:12px 0;"><div class="et" style="color:var(--danger)">Error: '+escHtml(e.message)+'</div></div>';
+  }
+}
+
+async function blToggleFeed(id, enabled) {
+  await fetch('/api/blacklist/feeds/'+id, {
+    method: 'PATCH', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({enabled})
+  });
+  blLoadStats();
+}
+
+async function blUpdateFeed(id) {
+  const btn = event.target;
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = '⟳ Loading...';
+  try {
+    const r = await fetch('/api/blacklist/feeds/'+id+'/update', {method:'POST'});
+    const d = await r.json();
+    if (d.ok) {
+      alert(`Feed updated: ${d.count} entries imported.`);
+    } else {
+      alert('Update failed: ' + (d.error || 'unknown'));
+    }
+  } catch(e) {
+    alert('Network error: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = orig;
+    loadBlacklist();
+  }
+}
+
+async function blUpdateAll() {
+  const btn = document.getElementById('blUpdateAllBtn');
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = '⟳ Updating all feeds...';
+  try {
+    const r = await fetch('/api/blacklist/update-all', {method:'POST'});
+    const d = await r.json();
+    const n = Object.keys(d.results || {}).length;
+    if (n === 0) {
+      alert('No enabled feeds. Enable at least one feed first.');
+    } else {
+      const summary = Object.entries(d.results).map(([fid,r]) =>
+        `  #${fid}: ${r.error ? 'ERROR — '+r.error : r.count+' entries'}`).join('\n');
+      alert(`Update complete (${n} Feeds):\n${summary}`);
+    }
+  } catch(e) {
+    alert('Error: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = orig;
+    loadBlacklist();
+  }
+}
+
+async function blAddFeed() {
+  const name = document.getElementById('blFeedName').value.trim();
+  const url  = document.getElementById('blFeedUrl').value.trim();
+  const fmt  = document.getElementById('blFeedFormat').value;
+  if (!name || !url) { alert('Name and URL are required.'); return; }
+  try {
+    const r = await fetch('/api/blacklist/feeds', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name, url, format: fmt})
+    });
+    const d = await r.json();
+    if (r.status !== 200) { alert('Error: ' + (d.error || r.status)); return; }
+    document.getElementById('blFeedName').value = '';
+    document.getElementById('blFeedUrl').value  = '';
+    loadBlacklist();
+  } catch(e) { alert('Network error: ' + e.message); }
+}
+
+async function blDeleteFeed(id, name) {
+  if (!confirm(`Feed "${name}" remove this feed?\n(Default feeds are reset rather than deleted.)`)) return;
+  await fetch('/api/blacklist/feeds/'+id, {method:'DELETE'});
+  loadBlacklist();
+}
+
+async function blLookup() {
+  const ip = document.getElementById('blLookupIp').value.trim();
+  const resEl = document.getElementById('blLookupResult');
+  if (!ip) { resEl.innerHTML = ''; return; }
+  try {
+    const r = await fetch('/api/blacklist/lookup/' + encodeURIComponent(ip));
+    const d = await r.json();
+    if (d.blacklisted) {
+      const feeds = d.matches.map(m =>
+        `<div style="padding:6px 10px;background:rgba(176,0,32,.08);border:1px solid rgba(176,0,32,.3);border-radius:3px;margin-top:4px;font-size:11px;">
+          <span style="color:#ff4444;font-weight:700;">🔴 HIT</span>
+          <span style="color:var(--text);margin-left:8px;font-family:var(--mono);">${escHtml(m.entry)}</span>
+          <span style="color:var(--muted);margin-left:8px;">in Feed:</span>
+          <span style="color:var(--accent);font-family:var(--mono);margin-left:4px;">${escHtml(m.feed)}</span>
+          <span style="color:var(--muted);margin-left:8px;font-size:10px;">(${escHtml(m.match_kind)})</span>
+        </div>`).join('');
+      resEl.innerHTML = `<div style="font-size:12px;color:#ff4444;font-weight:700;margin-bottom:6px;">⚠ ${escHtml(ip)} matches ${d.matches.length} Blocklists(s):</div>${feeds}`;
+    } else {
+      resEl.innerHTML = `<div style="padding:8px 12px;background:rgba(57,255,20,.06);border:1px solid rgba(57,255,20,.3);border-radius:3px;font-size:12px;color:#39ff14;">✓ ${escHtml(ip)} — no matches in active blocklists</div>`;
+    }
+  } catch(e) {
+    resEl.innerHTML = `<div style="color:var(--danger);font-size:11px;">Error: ${escHtml(e.message)}</div>`;
+  }
+}
+
+async function blLoadCustom() {
+  const el = document.getElementById('blCustomList');
+  try {
+    const r = await fetch('/api/blacklist/custom');
+    const entries = await r.json();
+    if (!entries.length) {
+      el.innerHTML = '<div class="empty" style="padding:12px 0;"><div class="et">No custom entries yet.</div></div>';
+      return;
+    }
+    el.innerHTML = '<div style="display:flex;flex-direction:column;gap:4px;">' +
+      entries.map(e => `<div style="display:flex;align-items:center;gap:10px;padding:7px 12px;background:var(--card);border:1px solid var(--border);border-radius:3px;font-size:11px;">
+        <span style="font-family:var(--mono);font-weight:600;color:var(--danger);min-width:160px;">${escHtml(e.ip_or_net)}</span>
+        <span style="flex:1;color:var(--muted);font-size:11px;">${escHtml(e.notes || '—')}</span>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">${(e.added_at||'').slice(0,19).replace('T',' ')}</span>
+        <button class="btnsm" onclick="blDeleteCustom(${e.id})" style="border-color:var(--danger);color:var(--danger);padding:3px 8px;font-size:10px;">✕</button>
+      </div>`).join('') + '</div>';
+  } catch(err) {
+    el.innerHTML = '<div class="empty"><div class="et" style="color:var(--danger)">Error: '+escHtml(err.message)+'</div></div>';
+  }
+}
+
+async function blAddCustom() {
+  const ip    = document.getElementById('blCustomIp').value.trim();
+  const notes = document.getElementById('blCustomNotes').value.trim();
+  if (!ip) { alert('IP or CIDR angeben.'); return; }
+  try {
+    const r = await fetch('/api/blacklist/custom', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ip_or_net: ip, notes})
+    });
+    const d = await r.json();
+    if (!d.ok) { alert('Error: ' + (d.error || 'unknown')); return; }
+    document.getElementById('blCustomIp').value = '';
+    document.getElementById('blCustomNotes').value = '';
+    blLoadCustom(); blLoadStats();
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+async function blDeleteCustom(id) {
+  if (!confirm('Delete entry?')) return;
+  await fetch('/api/blacklist/custom/'+id, {method:'DELETE'});
+  blLoadCustom(); blLoadStats();
+}
+
+// ══════════════════════════════════════════════════════════════
+// TRAFFIC TAB — live process-to-connection monitor
+// ══════════════════════════════════════════════════════════════
+let trafficPollTimer = null;
+let trafficDebounceT = null;
+
+async function loadTraffic() {
+  await Promise.all([trLoadStatus(), trLoadStats(), trLoadList()]);
+}
+
+function startTrafficPoll() {
+  stopTrafficPoll();
+  trafficPollTimer = setInterval(() => {
+    const tab = document.getElementById('tabTraffic');
+    if (tab && tab.classList.contains('active')) {
+      trLoadStatus(); trLoadStats(); trLoadList();
+    } else {
+      stopTrafficPoll();
+    }
+  }, 2500);
+}
+
+function stopTrafficPoll() {
+  if (trafficPollTimer) { clearInterval(trafficPollTimer); trafficPollTimer = null; }
+}
+
+function trDebouncedLoad() {
+  if (trafficDebounceT) clearTimeout(trafficDebounceT);
+  trafficDebounceT = setTimeout(trLoadList, 300);
+}
+
+function trResetFilters() {
+  document.getElementById('trFilterProc').value     = '';
+  document.getElementById('trFilterSearch').value   = '';
+  document.getElementById('trFilterExternal').checked = true;
+  document.getElementById('trFilterBl').checked     = false;
+  const g = document.getElementById('trGroupByHost'); if (g) g.checked = true;
+  trLoadList();
+}
+
+async function trLoadStatus() {
+  try {
+    const r = await fetch('/api/traffic/status');
+    const s = await r.json();
+    const statusEl = document.getElementById('trStatStatus');
+    const hint = document.getElementById('trStatusHint');
+    if (!s.available) {
+      statusEl.textContent = 'N/A'; statusEl.style.color = 'var(--danger)';
+      hint.innerHTML = '<span style="color:var(--danger)">⚠ psutil is not installed</span> — please run: <code style="background:var(--card);padding:1px 6px;border-radius:2px;">pip install psutil</code> and restart the app.';
+      return;
+    }
+    if (s.running) {
+      statusEl.textContent = 'ACTIVE'; statusEl.style.color = 'var(--accent2)';
+      const since = s.started_at ? new Date(s.started_at*1000).toLocaleTimeString() : '?';
+      hint.innerHTML = `running since ${since} · ${s.polls} Polls · interval ${s.poll_interval}s` +
+        (s.last_error ? ` · <span style="color:var(--danger)">⚠ ${escHtml(s.last_error)}</span>` : '');
+    } else {
+      statusEl.textContent = 'STOPPED'; statusEl.style.color = 'var(--muted)';
+      hint.innerHTML = 'Click ▶ START to begin live monitoring.';
+    }
+  } catch(e) { console.error('trLoadStatus', e); }
+}
+
+async function trLoadStats() {
+  try {
+    const r = await fetch('/api/traffic/stats');
+    const s = await r.json();
+    document.getElementById('trStatTotal').textContent     = s.total || 0;
+    document.getElementById('trStatExternal').textContent  = s.external || 0;
+    document.getElementById('trStatBlacklist').textContent = s.blacklist_hits || 0;
+    document.getElementById('trStatProcs').textContent     = s.unique_procs || 0;
+  } catch(e) { console.error(e); }
+}
+
+// Cache for cross-reference: known devices on the LAN (loaded once per session)
+let _knownDevsCache = {};
+let _knownDevsCacheTime = 0;
+async function trEnsureKnownDevs() {
+  // Refresh every 30s
+  if (Date.now() - _knownDevsCacheTime < 30000) return;
+  try {
+    const r = await fetch('/api/known-devices');
+    const list = await r.json();
+    _knownDevsCache = {};
+    for (const d of list) _knownDevsCache[d.ip] = d;
+    _knownDevsCacheTime = Date.now();
+  } catch(e) { /* silent */ }
+}
+
+async function trLoadList() {
+  const params = new URLSearchParams();
+  const proc = document.getElementById('trFilterProc').value.trim();
+  const search = document.getElementById('trFilterSearch').value.trim();
+  const ext = document.getElementById('trFilterExternal').checked;
+  const bl  = document.getElementById('trFilterBl').checked;
+  const grouped = (document.getElementById('trGroupByHost')||{}).checked;
+  if (proc) params.set('process', proc);
+  if (search) params.set('search', search);
+  if (ext) params.set('external_only', '1');
+  if (bl)  params.set('blacklisted_only', '1');
+  try {
+    await trEnsureKnownDevs();
+    const r = await fetch('/api/traffic?' + params.toString());
+    const list = await r.json();
+    const el = document.getElementById('trTable');
+    document.getElementById('trCount').textContent = list.length + ' Verbindung(en)';
+    if (!list.length) {
+      el.innerHTML = '<div class="empty" style="padding:24px 0;"><div class="ei">[~]</div><div class="et">No matching connections.</div></div>';
+      return;
+    }
+    const now = Date.now() / 1000;
+
+    if (grouped) {
+      el.innerHTML = trRenderGrouped(list, now);
+    } else {
+      el.innerHTML = trRenderFlat(list, now);
+    }
+  } catch(e) {
+    console.error('trLoadList', e);
+  }
+}
+
+function trRenderFlat(list, now) {
+  const rows = list.map((c, idx) => {
+    const isActive = (now - c.last_seen) < 5;
+    const bgRow = c.blacklist && c.blacklist.length
+      ? 'rgba(176,0,32,.10)'
+      : (idx % 2 === 0 ? 'transparent' : 'rgba(0,229,255,.025)');
+    const procDisplay = c.process === '?' && c.pid === 0
+      ? '<span style="color:var(--muted);font-style:italic;">unknown</span>'
+      : `<span style="color:var(--text);font-weight:600;">${escHtml(c.process)}</span>`;
+    const pidDisplay = c.pid > 0
+      ? `<span style="font-family:var(--mono);color:var(--muted);font-size:10px;">${c.pid}</span>`
+      : '<span style="color:var(--muted);font-size:10px;">—</span>';
+    const blTag = (c.blacklist && c.blacklist.length)
+      ? c.blacklist.map(m => `<span title="${escHtml(m.match_kind)}" style="display:inline-block;padding:1px 6px;background:rgba(176,0,32,.2);border:1px solid #b00020;color:#ff4444;font-family:var(--mono);font-size:9px;font-weight:700;border-radius:2px;margin-right:3px;">🔴 ${escHtml(m.feed)}</span>`).join('')
+      : '<span style="color:var(--muted);font-size:10px;">—</span>';
+    const extTag = c.external
+      ? '<span style="font-size:9px;padding:1px 5px;background:rgba(57,255,20,.1);border:1px solid #39ff14;color:#39ff14;font-family:var(--mono);border-radius:2px;">EXT</span>'
+      : '<span style="font-size:9px;padding:1px 5px;background:rgba(0,229,255,.1);border:1px solid var(--accent);color:var(--accent);font-family:var(--mono);border-radius:2px;">LAN</span>';
+    const ago = Math.max(0, Math.floor(now - c.last_seen));
+    const recency = isActive ? '<span style="color:#39ff14;font-weight:700;">●</span>' : `<span style="color:var(--muted);">${ago}s</span>`;
+    return `<tr style="background:${bgRow};border-bottom:1px solid rgba(0,229,255,.04);">
+      <td style="padding:7px 10px;">${recency}</td>
+      <td style="padding:7px 10px;">${procDisplay}</td>
+      <td style="padding:7px 10px;text-align:right;">${pidDisplay}</td>
+      <td style="padding:7px 10px;font-family:var(--mono);color:var(--muted);font-size:10px;">${escHtml(c.proto)}</td>
+      <td style="padding:7px 10px;font-family:var(--mono);color:var(--text);font-size:11px;">${escHtml(c.raddr)} ${extTag}</td>
+      <td style="padding:7px 10px;font-family:var(--mono);color:var(--muted);font-size:10px;">${escHtml(c.laddr)}</td>
+      <td style="padding:7px 10px;color:var(--muted);font-size:10px;font-family:var(--mono);">${escHtml(c.status)}</td>
+      <td style="padding:7px 10px;">${blTag}</td>
+    </tr>`;
+  }).join('');
+  return `<table style="width:100%;border-collapse:collapse;font-size:11px;">
+    <thead><tr style="background:rgba(0,229,255,.06);position:sticky;top:0;z-index:1;">
+      <th style="padding:8px 10px;text-align:left;font-size:9px;font-family:var(--mono);color:var(--muted);font-weight:600;letter-spacing:.1em;border-bottom:1px solid var(--border);">LIVE</th>
+      <th style="padding:8px 10px;text-align:left;font-size:9px;font-family:var(--mono);color:var(--muted);font-weight:600;letter-spacing:.1em;border-bottom:1px solid var(--border);">PROCESS</th>
+      <th style="padding:8px 10px;text-align:right;font-size:9px;font-family:var(--mono);color:var(--muted);font-weight:600;letter-spacing:.1em;border-bottom:1px solid var(--border);">PID</th>
+      <th style="padding:8px 10px;text-align:left;font-size:9px;font-family:var(--mono);color:var(--muted);font-weight:600;letter-spacing:.1em;border-bottom:1px solid var(--border);">PROTO</th>
+      <th style="padding:8px 10px;text-align:left;font-size:9px;font-family:var(--mono);color:var(--muted);font-weight:600;letter-spacing:.1em;border-bottom:1px solid var(--border);">REMOTE</th>
+      <th style="padding:8px 10px;text-align:left;font-size:9px;font-family:var(--mono);color:var(--muted);font-weight:600;letter-spacing:.1em;border-bottom:1px solid var(--border);">LOCAL</th>
+      <th style="padding:8px 10px;text-align:left;font-size:9px;font-family:var(--mono);color:var(--muted);font-weight:600;letter-spacing:.1em;border-bottom:1px solid var(--border);">STATUS</th>
+      <th style="padding:8px 10px;text-align:left;font-size:9px;font-family:var(--mono);color:var(--muted);font-weight:600;letter-spacing:.1em;border-bottom:1px solid var(--border);">BLOCKLIST</th>
+    </tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function trRenderGrouped(list, now) {
+  // Group by remote_ip
+  const groups = {};
+  for (const c of list) {
+    const ip = c.raddr_ip || c.raddr.split(':')[0].replace(/^\[|\]$/g,'');
+    if (!groups[ip]) groups[ip] = { ip: ip, items: [], external: c.external, blacklist: [] };
+    groups[ip].items.push(c);
+    if (c.blacklist && c.blacklist.length) {
+      for (const b of c.blacklist) {
+        if (!groups[ip].blacklist.find(x => x.feed === b.feed)) groups[ip].blacklist.push(b);
+      }
+    }
+  }
+  const arr = Object.values(groups);
+  arr.sort((a,b) => {
+    // Blocklists hits first, then by recency (most recent connection)
+    if ((a.blacklist.length>0) !== (b.blacklist.length>0)) return b.blacklist.length - a.blacklist.length;
+    const aRecent = Math.max(...a.items.map(x=>x.last_seen));
+    const bRecent = Math.max(...b.items.map(x=>x.last_seen));
+    return bRecent - aRecent;
+  });
+
+  const hostCards = arr.map(g => {
+    // Cross-reference with known LAN devices
+    const known = _knownDevsCache[g.ip];
+    let hostLabel = '';
+    if (known) {
+      const dev_icon = known.device_icon || '';
+      const dev_label = known.device_label || '';
+      const hostname = known.hostname || '';
+      hostLabel = `<div style="font-size:11px;color:var(--text);font-weight:600;margin-top:2px;">${dev_icon} ${escHtml(hostname || dev_label)} ${dev_label && hostname ? '<span style="color:var(--muted);font-weight:400;">— '+escHtml(dev_label)+'</span>' : ''}</div>`;
+    }
+    const extTag = g.external
+      ? '<span style="font-size:9px;padding:1px 6px;background:rgba(57,255,20,.1);border:1px solid #39ff14;color:#39ff14;font-family:var(--mono);border-radius:2px;font-weight:600;">EXTERNAL</span>'
+      : '<span style="font-size:9px;padding:1px 6px;background:rgba(0,229,255,.1);border:1px solid var(--accent);color:var(--accent);font-family:var(--mono);border-radius:2px;font-weight:600;">LAN</span>';
+    const blBadge = g.blacklist.length
+      ? g.blacklist.map(b => `<span style="display:inline-block;padding:1px 6px;background:rgba(176,0,32,.2);border:1px solid #b00020;color:#ff4444;font-family:var(--mono);font-size:9px;font-weight:700;border-radius:2px;margin-left:4px;">🔴 ${escHtml(b.feed)}</span>`).join('')
+      : '';
+    const headerBorder = g.blacklist.length ? '#b00020' : (g.external ? '#39ff14' : 'var(--accent)');
+    const cardBg = g.blacklist.length ? 'rgba(176,0,32,.06)' : 'var(--card)';
+
+    // Connection rows (no remote_ip column - it's in header now)
+    const connRows = g.items.map((c) => {
+      const isActive = (now - c.last_seen) < 5;
+      const ago = Math.max(0, Math.floor(now - c.last_seen));
+      const recency = isActive ? '<span style="color:#39ff14;">●</span>' : `<span style="color:var(--muted);font-size:9px;">${ago}s</span>`;
+      const procDisplay = c.process === '?' && c.pid === 0
+        ? '<span style="color:var(--muted);font-style:italic;">unknown</span>'
+        : `<span style="color:var(--text);font-weight:600;">${escHtml(c.process)}</span>`;
+      return `<tr style="border-bottom:1px solid rgba(0,229,255,.04);">
+        <td style="padding:5px 10px;width:30px;">${recency}</td>
+        <td style="padding:5px 10px;">${procDisplay}<span style="color:var(--muted);font-size:9px;margin-left:6px;">PID ${c.pid||'—'}</span></td>
+        <td style="padding:5px 10px;font-family:var(--mono);color:var(--muted);font-size:10px;">${escHtml(c.proto)} → :${c.rport}</td>
+        <td style="padding:5px 10px;color:var(--muted);font-size:10px;font-family:var(--mono);">${escHtml(c.status)}</td>
+      </tr>`;
+    }).join('');
+    return `<div style="background:${cardBg};border:1px solid var(--border);border-left:4px solid ${headerBorder};border-radius:4px;margin-bottom:10px;overflow:hidden;">
+      <div style="padding:10px 14px;background:rgba(0,229,255,.04);border-bottom:1px solid var(--border);">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+          <div>
+            <span style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--accent);">${escHtml(g.ip)}</span>
+            ${extTag}
+            ${blBadge}
+            ${hostLabel}
+          </div>
+          <div style="font-size:10px;color:var(--muted);font-family:var(--mono);">${g.items.length} Verbindung(en)</div>
+        </div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:11px;">
+        <tbody>${connRows}</tbody>
+      </table>
+    </div>`;
+  }).join('');
+
+  return `<div style="display:flex;flex-direction:column;">
+    <div style="margin-bottom:8px;font-size:10px;color:var(--muted);font-family:var(--mono);">${arr.length} unique remote hosts · ${list.length} connections total</div>
+    ${hostCards}
+  </div>`;
+}
+
+async function trStart() {
+  try {
+    const r = await fetch('/api/traffic/start', {method:'POST'});
+    const d = await r.json();
+    if (!d.ok) { alert('Error: ' + (d.message || 'unknown')); return; }
+    setTimeout(loadTraffic, 500);
+  } catch(e) { alert(e.message); }
+}
+
+async function trStop() {
+  await fetch('/api/traffic/stop', {method:'POST'});
+  loadTraffic();
+}
+
+async function trClear() {
+  if (!confirm('Clear the connections table?')) return;
+  await fetch('/api/traffic/clear', {method:'POST'});
+  loadTraffic();
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// SETTINGS DRAWER — navigation menu to legacy panels
+// (Scheduler / Blocklists / System check / History stay as-is,
+//  Settings just opens them in the main view)
+// ══════════════════════════════════════════════════════════════
+function openSettings() {
+  document.getElementById('settingsBackdrop').style.display = 'block';
+  document.getElementById('settingsDrawer').style.display = 'block';
+  renderSettingsMenu();
+}
+
+function closeSettings() {
+  document.getElementById('settingsBackdrop').style.display = 'none';
+  document.getElementById('settingsDrawer').style.display = 'none';
+}
+
+function renderSettingsMenu() {
+  // Hide the tab-strip inside drawer — we use a card menu instead
+  const stripEl = document.querySelector('#settingsDrawer .settings-tabs');
+  if (stripEl) stripEl.style.display = 'none';
+
+  const dest = document.getElementById('settingsContent');
+  dest.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button onclick="settingsGoto('Monitor')" class="settings-item">
+        <div style="font-size:13px;font-weight:700;color:var(--accent);">⏱ Scheduler &amp; Auto-Scan</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px;">Interval, next run, start at boot</div>
+      </button>
+      <button onclick="settingsGoto('Blacklist')" class="settings-item">
+        <div style="font-size:13px;font-weight:700;color:var(--accent);">🚫 Blocklist feeds</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px;">FireHOL / Spamhaus / Emerging Threats · custom entries · IP lookup</div>
+      </button>
+      <button onclick="settingsGoto('History')" class="settings-item">
+        <div style="font-size:13px;font-weight:700;color:var(--accent);">📁 Scan history &amp; Saved reports</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px;">Compare past scans · archive PDF reports</div>
+      </button>
+      <button onclick="settingsGoto('System')" class="settings-item">
+        <div style="font-size:13px;font-weight:700;color:var(--accent);">🔧 System check &amp; diagnostics</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px;">nmap-Status · Updates · configure NVD API key</div>
+      </button>
+    </div>
+    <div style="margin-top:18px;padding:10px 14px;background:var(--card);border-left:3px solid var(--accent2);border-radius:3px;font-size:10px;color:var(--muted);">
+      <b style="color:var(--text);">Tip:</b> Press ESC to close
+    </div>
+  `;
+  // Apply styles for the menu items (since they're inline, add via JS)
+  document.querySelectorAll('.settings-item').forEach(b => {
+    b.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:4px;padding:14px 18px;text-align:left;cursor:pointer;transition:border-color .15s,background .15s;width:100%;color:inherit;';
+    b.onmouseenter = () => { b.style.borderColor = 'var(--accent)'; b.style.background = 'rgba(0,229,255,.04)'; };
+    b.onmouseleave = () => { b.style.borderColor = 'var(--border)'; b.style.background = 'var(--card)'; };
+  });
+}
+
+function settingsGoto(panelName) {
+  closeSettings();
+  // Activate the hidden tab + show its panel
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  const hiddenBtn = document.getElementById('tab' + panelName);
+  if (hiddenBtn) hiddenBtn.classList.add('active');
+  const panel = document.getElementById('panel' + panelName);
+  if (panel) panel.classList.add('active');
+  // Trigger loaders
+  if (panelName === 'Monitor')   { try { loadAlerts(); loadScheduler(); } catch(e){} }
+  if (panelName === 'Blacklist') { try { loadBlacklist(); } catch(e){} }
+  if (panelName === 'History')   { try { loadHistory(); loadSavedReports(); } catch(e){} }
+}
+
+// Close drawer on ESC
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const d = document.getElementById('settingsDrawer');
+    if (d && d.style.display === 'block') closeSettings();
+  }
+});
+
+</script>
+</body>
+</html>

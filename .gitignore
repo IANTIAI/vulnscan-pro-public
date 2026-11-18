@@ -1,0 +1,35 @@
+# Local data and scan results
+*.db
+*.sqlite
+*.sqlite3
+instance/
+reports/
+output/
+tmp/
+*.pdf
+
+# Python environments and generated files
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Background process marker
+.vulnscan.pid
+
+# Node helper for screenshots
+node_modules/
+package.json
+package-lock.json
+!docs/sample-report.pdf
